@@ -1,0 +1,2414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Chat Room</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-container, .chat-container, .profile-container, .messages-container {
+            display: none;
+            padding: 20px;
+            height: 100%;
+        }
+
+        .auth-container.active, .chat-container.active, .profile-container.active, .messages-container.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Login/Register Styles */
+        .auth-form {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+            margin: auto;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ddd;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .toggle-auth {
+            text-align: center;
+            margin-top: 15px;
+            color: #ddd;
+        }
+
+        .toggle-auth a {
+            color: #4CAF50;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* Chat Styles */
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .users-sidebar {
+            width: 250px;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .users-list {
+            list-style: none;
+        }
+
+        .user-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .user-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .user-item.active {
+            background-color: rgba(76, 175, 80, 0.3);
+        }
+
+        .user-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .online {
+            background-color: #4CAF50;
+            box-shadow: 0 0 5px #4CAF50;
+        }
+
+        .offline {
+            background-color: #f44336;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .user-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-country {
+            font-size: 0.8em;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+        }
+
+        .country-flag {
+            width: 16px;
+            height: 12px;
+            margin-right: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .last-seen {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+
+        .follower-count {
+            font-size: 0.7em;
+            color: #4CAF50;
+            margin-top: 2px;
+        }
+
+        .chat-messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            animation: messageIn 0.3s ease;
+        }
+
+        .unread {
+            background-color: rgba(76, 175, 80, 0.2);
+            border-left: 3px solid #4CAF50;
+        }
+
+        @keyframes messageIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .message-sender {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-left: 10px;
+        }
+
+        .message-content {
+            word-wrap: break-word;
+            margin-left: 40px;
+        }
+
+        .message-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .message-input:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .send-button {
+            width: 100px;
+        }
+
+        .logout-btn {
+            background-color: #f44336;
+            width: auto;
+            padding: 5px 10px;
+        }
+
+        .logout-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .profile-btn {
+            background-color: #2196F3;
+            width: auto;
+            padding: 5px 10px;
+            margin-right: 10px;
+        }
+
+        .profile-btn:hover {
+            background-color: #0b7dda;
+        }
+
+        .messages-btn {
+            background-color: #9C27B0;
+            width: auto;
+            padding: 5px 10px;
+            margin-right: 10px;
+        }
+
+        .messages-btn:hover {
+            background-color: #7B1FA2;
+        }
+
+        .user-actions {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            font-size: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .block-btn {
+            background-color: #ff9800;
+        }
+
+        .block-btn:hover {
+            background-color: #e68a00;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+        }
+
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .follow-btn {
+            background-color: #4CAF50;
+        }
+
+        .follow-btn:hover {
+            background-color: #45a049;
+        }
+
+        .unfollow-btn {
+            background-color: #f44336;
+        }
+
+        .unfollow-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .profile-view {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-right: 20px;
+            object-fit: cover;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-details {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .profile-country {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .profile-country-flag {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .profile-description {
+            font-size: 0.9em;
+            color: #ddd;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+
+        .profile-status {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Message Management Styles */
+        .messages-management {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .messages-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .messages-tab.active {
+            border-bottom: 2px solid #4CAF50;
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+
+        .messages-tab:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .messages-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .messages-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .messages-table th, .messages-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .messages-table th {
+            background-color: rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+        }
+
+        .messages-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .unread-message {
+            font-weight: bold;
+        }
+
+        .message-row {
+            cursor: pointer;
+        }
+
+        .message-row:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .message-user {
+            display: flex;
+            align-items: center;
+        }
+
+        .message-avatar-small {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Floating bubbles animation */
+        .bubbles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: rise 10s infinite ease-in;
+        }
+
+        .bubble:nth-child(1) {
+            width: 40px;
+            height: 40px;
+            left: 10%;
+            animation-duration: 8s;
+        }
+
+        .bubble:nth-child(2) {
+            width: 20px;
+            height: 20px;
+            left: 20%;
+            animation-duration: 5s;
+            animation-delay: 1s;
+        }
+
+        .bubble:nth-child(3) {
+            width: 50px;
+            height: 50px;
+            left: 35%;
+            animation-duration: 7s;
+            animation-delay: 2s;
+        }
+
+        .bubble:nth-child(4) {
+            width: 80px;
+            height: 80px;
+            left: 50%;
+            animation-duration: 11s;
+            animation-delay: 0s;
+        }
+
+        .bubble:nth-child(5) {
+            width: 35px;
+            height: 35px;
+            left: 55%;
+            animation-duration: 6s;
+            animation-delay: 1s;
+        }
+
+        .bubble:nth-child(6) {
+            width: 45px;
+            height: 45px;
+            left: 65%;
+            animation-duration: 8s;
+            animation-delay: 3s;
+        }
+
+        .bubble:nth-child(7) {
+            width: 25px;
+            height: 25px;
+            left: 75%;
+            animation-duration: 7s;
+            animation-delay: 2s;
+        }
+
+        .bubble:nth-child(8) {
+            width: 80px;
+            height: 80px;
+            left: 80%;
+            animation-duration: 6s;
+            animation-delay: 1s;
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -100px;
+                transform: translateX(0);
+            }
+            50% {
+                transform: translateX(100px);
+            }
+            100% {
+                bottom: 1080px;
+                transform: translateX(-200px);
+            }
+        }
+
+        /* Profile form styles */
+        .profile-form {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            width: 500px;
+            margin: auto;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .avatar-upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar-upload-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .avatar-upload-btn:hover {
+            background-color: #0b7dda;
+        }
+
+        #avatar-upload-input {
+            display: none;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .readonly-field {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #aaa !important;
+            cursor: not-allowed !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-main {
+                flex-direction: column;
+            }
+            
+            .users-sidebar {
+                width: 100%;
+                height: 200px;
+            }
+            
+            .auth-form, .profile-form {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background bubbles animation -->
+    <div class="bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <div class="container">
+        <!-- Authentication Container -->
+        <div id="auth-container" class="auth-container active">
+            <div id="login-form" class="auth-form">
+                <h2>Login to Global Chat</h2>
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password">
+                </div>
+                <button id="login-btn">Login</button>
+                <div class="toggle-auth">
+                    Don't have an account? <a id="show-register">Register</a>
+                </div>
+            </div>
+
+            <div id="register-form" class="auth-form" style="display: none;">
+                <h2>Register for Global Chat</h2>
+                <div class="form-group">
+                    <label for="register-username">Username</label>
+                    <input type="text" id="register-username" placeholder="Choose a username">
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label for="register-country">Country</label>
+                    <select id="register-country">
+                        <option value="">Select your country</option>
+                        <option value="af">Afghanistan</option>
+                        <option value="al">Albania</option>
+                        <option value="dz">Algeria</option>
+                        <option value="as">American Samoa</option>
+                        <option value="ad">Andorra</option>
+                        <option value="ao">Angola</option>
+                        <option value="ai">Anguilla</option>
+                        <option value="aq">Antarctica</option>
+                        <option value="ag">Antigua and Barbuda</option>
+                        <option value="ar">Argentina</option>
+                        <option value="am">Armenia</option>
+                        <option value="aw">Aruba</option>
+                        <option value="au">Australia</option>
+                        <option value="at">Austria</option>
+                        <option value="az">Azerbaijan</option>
+                        <option value="bs">Bahamas</option>
+                        <option value="bh">Bahrain</option>
+                        <option value="bd">Bangladesh</option>
+                        <option value="bb">Barbados</option>
+                        <option value="by">Belarus</option>
+                        <option value="be">Belgium</option>
+                        <option value="bz">Belize</option>
+                        <option value="bj">Benin</option>
+                        <option value="bm">Bermuda</option>
+                        <option value="bt">Bhutan</option>
+                        <option value="bo">Bolivia</option>
+                        <option value="ba">Bosnia and Herzegovina</option>
+                        <option value="bw">Botswana</option>
+                        <option value="br">Brazil</option>
+                        <option value="io">British Indian Ocean Territory</option>
+                        <option value="vg">British Virgin Islands</option>
+                        <option value="bn">Brunei</option>
+                        <option value="bg">Bulgaria</option>
+                        <option value="bf">Burkina Faso</option>
+                        <option value="bi">Burundi</option>
+                        <option value="kh">Cambodia</option>
+                        <option value="cm">Cameroon</option>
+                        <option value="ca">Canada</option>
+                        <option value="cv">Cape Verde</option>
+                        <option value="ky">Cayman Islands</option>
+                        <option value="cf">Central African Republic</option>
+                        <option value="td">Chad</option>
+                        <option value="cl">Chile</option>
+                        <option value="cn">China</option>
+                        <option value="cx">Christmas Island</option>
+                        <option value="cc">Cocos Islands</option>
+                        <option value="co">Colombia</option>
+                        <option value="km">Comoros</option>
+                        <option value="ck">Cook Islands</option>
+                        <option value="cr">Costa Rica</option>
+                        <option value="hr">Croatia</option>
+                        <option value="cu">Cuba</option>
+                        <option value="cw">Curacao</option>
+                        <option value="cy">Cyprus</option>
+                        <option value="cz">Czech Republic</option>
+                        <option value="cd">Democratic Republic of the Congo</option>
+                        <option value="dk">Denmark</option>
+                        <option value="dj">Djibouti</option>
+                        <option value="dm">Dominica</option>
+                        <option value="do">Dominican Republic</option>
+                        <option value="tl">East Timor</option>
+                        <option value="ec">Ecuador</option>
+                        <option value="eg">Egypt</option>
+                        <option value="sv">El Salvador</option>
+                        <option value="gq">Equatorial Guinea</option>
+                        <option value="er">Eritrea</option>
+                        <option value="ee">Estonia</option>
+                        <option value="et">Ethiopia</option>
+                        <option value="fk">Falkland Islands</option>
+                        <option value="fo">Faroe Islands</option>
+                        <option value="fj">Fiji</option>
+                        <option value="fi">Finland</option>
+                        <option value="fr">France</option>
+                        <option value="pf">French Polynesia</option>
+                        <option value="ga">Gabon</option>
+                        <option value="gm">Gambia</option>
+                        <option value="ge">Georgia</option>
+                        <option value="de">Germany</option>
+                        <option value="gh">Ghana</option>
+                        <option value="gi">Gibraltar</option>
+                        <option value="gr">Greece</option>
+                        <option value="gl">Greenland</option>
+                        <option value="gd">Grenada</option>
+                        <option value="gu">Guam</option>
+                        <option value="gt">Guatemala</option>
+                        <option value="gg">Guernsey</option>
+                        <option value="gn">Guinea</option>
+                        <option value="gw">Guinea-Bissau</option>
+                        <option value="gy">Guyana</option>
+                        <option value="ht">Haiti</option>
+                        <option value="hn">Honduras</option>
+                        <option value="hk">Hong Kong</option>
+                        <option value="hu">Hungary</option>
+                        <option value="is">Iceland</option>
+                        <option value="in">India</option>
+                        <option value="id">Indonesia</option>
+                        <option value="ir">Iran</option>
+                        <option value="iq">Iraq</option>
+                        <option value="ie">Ireland</option>
+                        <option value="im">Isle of Man</option>
+                        <option value="il">Israel</option>
+                        <option value="it">Italy</option>
+                        <option value="ci">Ivory Coast</option>
+                        <option value="jm">Jamaica</option>
+                        <option value="jp">Japan</option>
+                        <option value="je">Jersey</option>
+                        <option value="jo">Jordan</option>
+                        <option value="kz">Kazakhstan</option>
+                        <option value="ke">Kenya</option>
+                        <option value="ki">Kiribati</option>
+                        <option value="xk">Kosovo</option>
+                        <option value="kw">Kuwait</option>
+                        <option value="kg">Kyrgyzstan</option>
+                        <option value="la">Laos</option>
+                        <option value="lv">Latvia</option>
+                        <option value="lb">Lebanon</option>
+                        <option value="ls">Lesotho</option>
+                        <option value="lr">Liberia</option>
+                        <option value="ly">Libya</option>
+                        <option value="li">Liechtenstein</option>
+                        <option value="lt">Lithuania</option>
+                        <option value="lu">Luxembourg</option>
+                        <option value="mo">Macau</option>
+                        <option value="mk">Macedonia</option>
+                        <option value="mg">Madagascar</option>
+                        <option value="mw">Malawi</option>
+                        <option value="my">Malaysia</option>
+                        <option value="mv">Maldives</option>
+                        <option value="ml">Mali</option>
+                        <option value="mt">Malta</option>
+                        <option value="mh">Marshall Islands</option>
+                        <option value="mr">Mauritania</option>
+                        <option value="mu">Mauritius</option>
+                        <option value="yt">Mayotte</option>
+                        <option value="mx">Mexico</option>
+                        <option value="fm">Micronesia</option>
+                        <option value="md">Moldova</option>
+                        <option value="mc">Monaco</option>
+                        <option value="mn">Mongolia</option>
+                        <option value="me">Montenegro</option>
+                        <option value="ms">Montserrat</option>
+                        <option value="ma">Morocco</option>
+                        <option value="mz">Mozambique</option>
+                        <option value="mm">Myanmar</option>
+                        <option value="na">Namibia</option>
+                        <option value="nr">Nauru</option>
+                        <option value="np">Nepal</option>
+                        <option value="nl">Netherlands</option>
+                        <option value="an">Netherlands Antilles</option>
+                        <option value="nc">New Caledonia</option>
+                        <option value="nz">New Zealand</option>
+                        <option value="ni">Nicaragua</option>
+                        <option value="ne">Niger</option>
+                        <option value="ng">Nigeria</option>
+                        <option value="nu">Niue</option>
+                        <option value="kp">North Korea</option>
+                        <option value="mp">Northern Mariana Islands</option>
+                        <option value="no">Norway</option>
+                        <option value="om">Oman</option>
+                        <option value="pk">Pakistan</option>
+                        <option value="pw">Palau</option>
+                        <option value="ps">Palestine</option>
+                        <option value="pa">Panama</option>
+                        <option value="pg">Papua New Guinea</option>
+                        <option value="py">Paraguay</option>
+                        <option value="pe">Peru</option>
+                        <option value="ph">Philippines</option>
+                        <option value="pn">Pitcairn</option>
+                        <option value="pl">Poland</option>
+                        <option value="pt">Portugal</option>
+                        <option value="pr">Puerto Rico</option>
+                        <option value="qa">Qatar</option>
+                        <option value="cg">Republic of the Congo</option>
+                        <option value="re">Reunion</option>
+                        <option value="ro">Romania</option>
+                        <option value="ru">Russia</option>
+                        <option value="rw">Rwanda</option>
+                        <option value="bl">Saint Barthelemy</option>
+                        <option value="sh">Saint Helena</option>
+                        <option value="kn">Saint Kitts and Nevis</option>
+                        <option value="lc">Saint Lucia</option>
+                        <option value="mf">Saint Martin</option>
+                        <option value="pm">Saint Pierre and Miquelon</option>
+                        <option value="vc">Saint Vincent and the Grenadines</option>
+                        <option value="ws">Samoa</option>
+                        <option value="sm">San Marino</option>
+                        <option value="st">Sao Tome and Principe</option>
+                        <option value="sa">Saudi Arabia</option>
+                        <option value="sn">Senegal</option>
+                        <option value="rs">Serbia</option>
+                        <option value="sc">Seychelles</option>
+                        <option value="sl">Sierra Leone</option>
+                        <option value="sg">Singapore</option>
+                        <option value="sx">Sint Maarten</option>
+                        <option value="sk">Slovakia</option>
+                        <option value="si">Slovenia</option>
+                        <option value="sb">Solomon Islands</option>
+                        <option value="so">Somalia</option>
+                        <option value="za">South Africa</option>
+                        <option value="kr">South Korea</option>
+                        <option value="ss">South Sudan</option>
+                        <option value="es">Spain</option>
+                        <option value="lk">Sri Lanka</option>
+                        <option value="sd">Sudan</option>
+                        <option value="sr">Suriname</option>
+                        <option value="sj">Svalbard and Jan Mayen</option>
+                        <option value="sz">Swaziland</option>
+                        <option value="se">Sweden</option>
+                        <option value="ch">Switzerland</option>
+                        <option value="sy">Syria</option>
+                        <option value="tw">Taiwan</option>
+                        <option value="tj">Tajikistan</option>
+                        <option value="tz">Tanzania</option>
+                        <option value="th">Thailand</option>
+                        <option value="tg">Togo</option>
+                        <option value="tk">Tokelau</option>
+                        <option value="to">Tonga</option>
+                        <option value="tt">Trinidad and Tobago</option>
+                        <option value="tn">Tunisia</option>
+                        <option value="tr">Turkey</option>
+                        <option value="tm">Turkmenistan</option>
+                        <option value="tc">Turks and Caicos Islands</option>
+                        <option value="tv">Tuvalu</option>
+                        <option value="vi">U.S. Virgin Islands</option>
+                        <option value="ug">Uganda</option>
+                        <option value="ua">Ukraine</option>
+                        <option value="ae">United Arab Emirates</option>
+                        <option value="gb">United Kingdom</option>
+                        <option value="us">United States</option>
+                        <option value="uy">Uruguay</option>
+                        <option value="uz">Uzbekistan</option>
+                        <option value="vu">Vanuatu</option>
+                        <option value="va">Vatican</option>
+                        <option value="ve">Venezuela</option>
+                        <option value="vn">Vietnam</option>
+                        <option value="wf">Wallis and Futuna</option>
+                        <option value="eh">Western Sahara</option>
+                        <option value="ye">Yemen</option>
+                        <option value="zm">Zambia</option>
+                        <option value="zw">Zimbabwe</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="register-description">Profile Description</label>
+                    <textarea id="register-description" placeholder="Tell others about yourself"></textarea>
+                </div>
+                <div class="avatar-upload-container">
+                    <img id="register-avatar-preview" class="avatar-preview" src="" alt="Profile Picture">
+                    <label for="register-avatar-upload" class="avatar-upload-btn">Choose Profile Picture</label>
+                    <input type="file" id="register-avatar-upload" accept="image/*">
+                </div>
+                <button id="register-btn">Register</button>
+                <div class="toggle-auth">
+                    Already have an account? <a id="show-login">Login</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div id="chat-container" class="chat-container">
+            <div class="chat-header">
+                <h2>Global Chat Room</h2>
+                <div>
+                    <button id="messages-btn" class="messages-btn">Messages</button>
+                    <button id="profile-btn" class="profile-btn">Profile</button>
+                    <button id="logout-btn" class="logout-btn">Logout</button>
+                </div>
+            </div>
+            <div class="chat-main">
+                <div class="users-sidebar">
+                    <h3>Online Users</h3>
+                    <ul id="users-list" class="users-list"></ul>
+                </div>
+                <div class="chat-area">
+                    <div id="profile-view" class="profile-view">
+                        <div class="profile-header">
+                            <img id="view-profile-avatar" class="profile-avatar" src="" alt="Profile Picture">
+                            <div class="profile-details">
+                                <div class="profile-name" id="view-profile-name"></div>
+                                <div class="profile-country" id="view-profile-country"></div>
+                                <div class="profile-status" id="view-profile-status"></div>
+                            </div>
+                        </div>
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="followers-count">0</div>
+                                <div class="stat-label">Followers</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="following-count">0</div>
+                                <div class="stat-label">Following</div>
+                            </div>
+                        </div>
+                        <div class="profile-description" id="view-profile-description"></div>
+                        <div class="profile-actions">
+                            <button id="follow-btn" class="follow-btn" style="display: none;">Follow</button>
+                            <button id="unfollow-btn" class="unfollow-btn" style="display: none;">Unfollow</button>
+                        </div>
+                    </div>
+                    <div id="chat-messages-container" class="chat-messages-container"></div>
+                    <div class="message-input-container">
+                        <input type="text" id="message-input" class="message-input" placeholder="Type your message...">
+                        <button id="send-btn" class="send-button">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Container -->
+        <div id="profile-container" class="profile-container">
+            <div class="profile-form">
+                <h2>Edit Profile</h2>
+                <div class="avatar-upload-container">
+                    <img id="profile-avatar-preview" class="avatar-preview" src="" alt="Profile Picture">
+                    <label for="profile-avatar-upload" class="avatar-upload-btn">Change Profile Picture</label>
+                    <input type="file" id="profile-avatar-upload" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label for="profile-username">Username</label>
+                    <input type="text" id="profile-username" placeholder="Your username" class="readonly-field" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="profile-country">Country</label>
+                    <select id="profile-country" class="readonly-field" disabled>
+                        <option value="">Select your country</option>
+                        <!-- Countries will be populated but disabled -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="profile-description">Profile Description</label>
+                    <textarea id="profile-description" placeholder="Tell others about yourself"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button id="save-profile-btn" class="profile-btn">Save Profile</button>
+                    <button id="cancel-profile-btn" class="logout-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Management Container -->
+        <div id="messages-container" class="messages-container">
+            <div class="chat-header">
+                <h2>Message Management</h2>
+                <div>
+                    <button id="back-to-chat-btn" class="profile-btn">Back to Chat</button>
+                </div>
+            </div>
+            <div class="messages-management">
+                <div class="messages-tabs">
+                    <div class="messages-tab active" data-tab="all">All Messages</div>
+                    <div class="messages-tab" data-tab="unread">Unread Messages</div>
+                    <div class="messages-tab" data-tab="following">Following</div>
+                </div>
+                <div class="messages-content">
+                    <div id="all-messages-tab" class="messages-tab-content">
+                        <table class="messages-table">
+                            <thead>
+                                <tr>
+                                    <th>From</th>
+                                    <th>Message</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-messages-list"></tbody>
+                        </table>
+                    </div>
+                    <div id="unread-messages-tab" class="messages-tab-content" style="display: none;">
+                        <table class="messages-table">
+                            <thead>
+                                <tr>
+                                    <th>From</th>
+                                    <th>Message</th>
+                                    <th>Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unread-messages-list"></tbody>
+                        </table>
+                    </div>
+                    <div id="following-tab" class="messages-tab-content" style="display: none;">
+                        <table class="messages-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Followers</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="following-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQVIvZvxmYdcriHR8j0ormGzNRjGD0_no",
+            authDomain: "online--suit.firebaseapp.com",
+            databaseURL: "https://online--suit-default-rtdb.firebaseio.com",
+            projectId: "online--suit",
+            storageBucket: "online--suit.firebasestorage.app",
+            messagingSenderId: "463840835705",
+            appId: "1:463840835705:web:f490fd49851c0afb8dfca8"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const storage = firebase.storage();
+
+        // DOM Elements
+        const authContainer = document.getElementById('auth-container');
+        const chatContainer = document.getElementById('chat-container');
+        const profileContainer = document.getElementById('profile-container');
+        const messagesContainer = document.getElementById('messages-container');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegister = document.getElementById('show-register');
+        const showLogin = document.getElementById('show-login');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const profileBtn = document.getElementById('profile-btn');
+        const messagesBtn = document.getElementById('messages-btn');
+        const backToChatBtn = document.getElementById('back-to-chat-btn');
+        const saveProfileBtn = document.getElementById('save-profile-btn');
+        const cancelProfileBtn = document.getElementById('cancel-profile-btn');
+        const usersList = document.getElementById('users-list');
+        const chatMessagesContainer = document.getElementById('chat-messages-container');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const profileView = document.getElementById('profile-view');
+        const viewProfileName = document.getElementById('view-profile-name');
+        const viewProfileAvatar = document.getElementById('view-profile-avatar');
+        const viewProfileCountry = document.getElementById('view-profile-country');
+        const viewProfileDescription = document.getElementById('view-profile-description');
+        const viewProfileStatus = document.getElementById('view-profile-status');
+        const followersCount = document.getElementById('followers-count');
+        const followingCount = document.getElementById('following-count');
+        const followBtn = document.getElementById('follow-btn');
+        const unfollowBtn = document.getElementById('unfollow-btn');
+        const allMessagesList = document.getElementById('all-messages-list');
+        const unreadMessagesList = document.getElementById('unread-messages-list');
+        const followingList = document.getElementById('following-list');
+        const messageTabs = document.querySelectorAll('.messages-tab');
+        const profileAvatarPreview = document.getElementById('profile-avatar-preview');
+        const profileAvatarUpload = document.getElementById('profile-avatar-upload');
+        const registerAvatarPreview = document.getElementById('register-avatar-preview');
+        const registerAvatarUpload = document.getElementById('register-avatar-upload');
+
+        // Current user data
+        let currentUser = null;
+        let currentChatWith = null;
+        let deviceId = localStorage.getItem('deviceId') || generateDeviceId();
+        let unreadMessages = {};
+        let messageListeners = {};
+        let userListeners = {};
+        let followListeners = {};
+        let selectedAvatarFile = null;
+
+        // Country flag mapping (complete list)
+        const countryFlags = {
+            'af': '🇦🇫', 'al': '🇦🇱', 'dz': '🇩🇿', 'as': '🇦🇸', 'ad': '🇦🇩', 'ao': '🇦🇴', 'ai': '🇦🇮', 'aq': '🇦🇶', 
+            'ag': '🇦🇬', 'ar': '🇦🇷', 'am': '🇦🇲', 'aw': '🇦🇼', 'au': '🇦🇺', 'at': '🇦🇹', 'az': '🇦🇿', 'bs': '🇧🇸', 
+            'bh': '🇧🇭', 'bd': '🇧🇩', 'bb': '🇧🇧', 'by': '🇧🇾', 'be': '🇧🇪', 'bz': '🇧🇿', 'bj': '🇧🇯', 'bm': '🇧🇲', 
+            'bt': '🇧🇹', 'bo': '🇧🇴', 'ba': '🇧🇦', 'bw': '🇧🇼', 'br': '🇧🇷', 'io': '🇮🇴', 'vg': '🇻🇬', 'bn': '🇧🇳', 
+            'bg': '🇧🇬', 'bf': '🇧🇫', 'bi': '🇧🇮', 'kh': '🇰🇭', 'cm': '🇨🇲', 'ca': '🇨🇦', 'cv': '🇨🇻', 'ky': '🇰🇾', 
+            'cf': '🇨🇫', 'td': '🇹🇩', 'cl': '🇨🇱', 'cn': '🇨🇳', 'cx': '🇨🇽', 'cc': '🇨🇨', 'co': '🇨🇴', 'km': '🇰🇲', 
+            'ck': '🇨🇰', 'cr': '🇨🇷', 'hr': '🇭🇷', 'cu': '🇨🇺', 'cw': '🇨🇼', 'cy': '🇨🇾', 'cz': '🇨🇿', 'cd': '🇨🇩', 
+            'dk': '🇩🇰', 'dj': '🇩🇯', 'dm': '🇩🇲', 'do': '🇩🇴', 'tl': '🇹🇱', 'ec': '🇪🇨', 'eg': '🇪🇬', 'sv': '🇸🇻', 
+            'gq': '🇬🇶', 'er': '🇪🇷', 'ee': '🇪🇪', 'et': '🇪🇹', 'fk': '🇫🇰', 'fo': '🇫🇴', 'fj': '🇫🇯', 'fi': '🇫🇮', 
+            'fr': '🇫🇷', 'pf': '🇵🇫', 'ga': '🇬🇦', 'gm': '🇬🇲', 'ge': '🇬🇪', 'de': '🇩🇪', 'gh': '🇬🇭', 'gi': '🇬🇮', 
+            'gr': '🇬🇷', 'gl': '🇬🇱', 'gd': '🇬🇩', 'gu': '🇬🇺', 'gt': '🇬🇹', 'gg': '🇬🇬', 'gn': '🇬🇳', 'gw': '🇬🇼', 
+            'gy': '🇬🇾', 'ht': '🇭🇹', 'hn': '🇭🇳', 'hk': '🇭🇰', 'hu': '🇭🇺', 'is': '🇮🇸', 'in': '🇮🇳', 'id': '🇮🇩', 
+            'ir': '🇮🇷', 'iq': '🇮🇶', 'ie': '🇮🇪', 'im': '🇮🇲', 'il': '🇮🇱', 'it': '🇮🇹', 'ci': '🇨🇮', 'jm': '🇯🇲', 
+            'jp': '🇯🇵', 'je': '🇯🇪', 'jo': '🇯🇴', 'kz': '🇰🇿', 'ke': '🇰🇪', 'ki': '🇰🇮', 'xk': '🇽🇰', 'kw': '🇰🇼', 
+            'kg': '🇰🇬', 'la': '🇱🇦', 'lv': '🇱🇻', 'lb': '🇱🇧', 'ls': '🇱🇸', 'lr': '🇱🇷', 'ly': '🇱🇾', 'li': '🇱🇮', 
+            'lt': '🇱🇹', 'lu': '🇱🇺', 'mo': '🇲🇴', 'mk': '🇲🇰', 'mg': '🇲🇬', 'mw': '🇲🇼', 'my': '🇲🇾', 'mv': '🇲🇻', 
+            'ml': '🇲🇱', 'mt': '🇲🇹', 'mh': '🇲🇭', 'mr': '🇲🇷', 'mu': '🇲🇺', 'yt': '🇾🇹', 'mx': '🇲🇽', 'fm': '🇫🇲', 
+            'md': '🇲🇩', 'mc': '🇲🇨', 'mn': '🇲🇳', 'me': '🇲🇪', 'ms': '🇲🇸', 'ma': '🇲🇦', 'mz': '🇲🇿', 'mm': '🇲🇲', 
+            'na': '🇳🇦', 'nr': '🇳🇷', 'np': '🇳🇵', 'nl': '🇳🇱', 'an': '🇳🇱', 'nc': '🇳🇨', 'nz': '🇳🇿', 'ni': '🇳🇮', 
+            'ne': '🇳🇪', 'ng': '🇳🇬', 'nu': '🇳🇺', 'kp': '🇰🇵', 'mp': '🇲🇵', 'no': '🇳🇴', 'om': '🇴🇲', 'pk': '🇵🇰', 
+            'pw': '🇵🇼', 'ps': '🇵🇸', 'pa': '🇵🇦', 'pg': '🇵🇬', 'py': '🇵🇾', 'pe': '🇵🇪', 'ph': '🇵🇭', 'pn': '🇵🇳', 
+            'pl': '🇵🇱', 'pt': '🇵🇹', 'pr': '🇵🇷', 'qa': '🇶🇦', 'cg': '🇨🇬', 're': '🇷🇪', 'ro': '🇷🇴', 'ru': '🇷🇺', 
+            'rw': '🇷🇼', 'bl': '🇧🇱', 'sh': '🇸🇭', 'kn': '🇰🇳', 'lc': '🇱🇨', 'mf': '🇲🇫', 'pm': '🇵🇲', 'vc': '🇻🇨', 
+            'ws': '🇼🇸', 'sm': '🇸🇲', 'st': '🇸🇹', 'sa': '🇸🇦', 'sn': '🇸🇳', 'rs': '🇷🇸', 'sc': '🇸🇨', 'sl': '🇸🇱', 
+            'sg': '🇸🇬', 'sx': '🇸🇽', 'sk': '🇸🇰', 'si': '🇸🇮', 'sb': '🇸🇧', 'so': '🇸🇴', 'za': '🇿🇦', 'kr': '🇰🇷', 
+            'ss': '🇸🇸', 'es': '🇪🇸', 'lk': '🇱🇰', 'sd': '🇸🇩', 'sr': '🇸🇷', 'sj': '🇸🇯', 'sz': '🇸🇿', 'se': '🇸🇪', 
+            'ch': '🇨🇭', 'sy': '🇸🇾', 'tw': '🇹🇼', 'tj': '🇹🇯', 'tz': '🇹🇿', 'th': '🇹🇭', 'tg': '🇹🇬', 'tk': '🇹🇰', 
+            'to': '🇹🇴', 'tt': '🇹🇹', 'tn': '🇹🇳', 'tr': '🇹🇷', 'tm': '🇹🇲', 'tc': '🇹🇨', 'tv': '🇹🇻', 'vi': '🇻🇮', 
+            'ug': '🇺🇬', 'ua': '🇺🇦', 'ae': '🇦🇪', 'gb': '🇬🇧', 'us': '🇺🇸', 'uy': '🇺🇾', 'uz': '🇺🇿', 'vu': '🇻🇺', 
+            'va': '🇻🇦', 've': '🇻🇪', 'vn': '🇻🇳', 'wf': '🇼🇫', 'eh': '🇪🇭', 'ye': '🇾🇪', 'zm': '🇿🇲', 'zw': '🇿🇼',
+            'other': '🌍'
+        };
+
+        // Country name mapping (complete list)
+        const countryNames = {
+            'af': 'Afghanistan', 'al': 'Albania', 'dz': 'Algeria', 'as': 'American Samoa', 'ad': 'Andorra', 
+            'ao': 'Angola', 'ai': 'Anguilla', 'aq': 'Antarctica', 'ag': 'Antigua and Barbuda', 'ar': 'Argentina', 
+            'am': 'Armenia', 'aw': 'Aruba', 'au': 'Australia', 'at': 'Austria', 'az': 'Azerbaijan', 'bs': 'Bahamas', 
+            'bh': 'Bahrain', 'bd': 'Bangladesh', 'bb': 'Barbados', 'by': 'Belarus', 'be': 'Belgium', 'bz': 'Belize', 
+            'bj': 'Benin', 'bm': 'Bermuda', 'bt': 'Bhutan', 'bo': 'Bolivia', 'ba': 'Bosnia and Herzegovina', 
+            'bw': 'Botswana', 'br': 'Brazil', 'io': 'British Indian Ocean Territory', 'vg': 'British Virgin Islands', 
+            'bn': 'Brunei', 'bg': 'Bulgaria', 'bf': 'Burkina Faso', 'bi': 'Burundi', 'kh': 'Cambodia', 'cm': 'Cameroon', 
+            'ca': 'Canada', 'cv': 'Cape Verde', 'ky': 'Cayman Islands', 'cf': 'Central African Republic', 'td': 'Chad', 
+            'cl': 'Chile', 'cn': 'China', 'cx': 'Christmas Island', 'cc': 'Cocos Islands', 'co': 'Colombia', 
+            'km': 'Comoros', 'ck': 'Cook Islands', 'cr': 'Costa Rica', 'hr': 'Croatia', 'cu': 'Cuba', 'cw': 'Curacao', 
+            'cy': 'Cyprus', 'cz': 'Czech Republic', 'cd': 'Democratic Republic of the Congo', 'dk': 'Denmark', 
+            'dj': 'Djibouti', 'dm': 'Dominica', 'do': 'Dominican Republic', 'tl': 'East Timor', 'ec': 'Ecuador', 
+            'eg': 'Egypt', 'sv': 'El Salvador', 'gq': 'Equatorial Guinea', 'er': 'Eritrea', 'ee': 'Estonia', 
+            'et': 'Ethiopia', 'fk': 'Falkland Islands', 'fo': 'Faroe Islands', 'fj': 'Fiji', 'fi': 'Finland', 
+            'fr': 'France', 'pf': 'French Polynesia', 'ga': 'Gabon', 'gm': 'Gambia', 'ge': 'Georgia', 'de': 'Germany', 
+            'gh': 'Ghana', 'gi': 'Gibraltar', 'gr': 'Greece', 'gl': 'Greenland', 'gd': 'Grenada', 'gu': 'Guam', 
+            'gt': 'Guatemala', 'gg': 'Guernsey', 'gn': 'Guinea', 'gw': 'Guinea-Bissau', 'gy': 'Guyana', 'ht': 'Haiti', 
+            'hn': 'Honduras', 'hk': 'Hong Kong', 'hu': 'Hungary', 'is': 'Iceland', 'in': 'India', 'id': 'Indonesia', 
+            'ir': 'Iran', 'iq': 'Iraq', 'ie': 'Ireland', 'im': 'Isle of Man', 'il': 'Israel', 'it': 'Italy', 
+            'ci': 'Ivory Coast', 'jm': 'Jamaica', 'jp': 'Japan', 'je': 'Jersey', 'jo': 'Jordan', 'kz': 'Kazakhstan', 
+            'ke': 'Kenya', 'ki': 'Kiribati', 'xk': 'Kosovo', 'kw': 'Kuwait', 'kg': 'Kyrgyzstan', 'la': 'Laos', 
+            'lv': 'Latvia', 'lb': 'Lebanon', 'ls': 'Lesotho', 'lr': 'Liberia', 'ly': 'Libya', 'li': 'Liechtenstein', 
+            'lt': 'Lithuania', 'lu': 'Luxembourg', 'mo': 'Macau', 'mk': 'Macedonia', 'mg': 'Madagascar', 
+            'mw': 'Malawi', 'my': 'Malaysia', 'mv': 'Maldives', 'ml': 'Mali', 'mt': 'Malta', 'mh': 'Marshall Islands', 
+            'mr': 'Mauritania', 'mu': 'Mauritius', 'yt': 'Mayotte', 'mx': 'Mexico', 'fm': 'Micronesia', 'md': 'Moldova', 
+            'mc': 'Monaco', 'mn': 'Mongolia', 'me': 'Montenegro', 'ms': 'Montserrat', 'ma': 'Morocco', 'mz': 'Mozambique', 
+            'mm': 'Myanmar', 'na': 'Namibia', 'nr': 'Nauru', 'np': 'Nepal', 'nl': 'Netherlands', 'an': 'Netherlands Antilles', 
+            'nc': 'New Caledonia', 'nz': 'New Zealand', 'ni': 'Nicaragua', 'ne': 'Niger', 'ng': 'Nigeria', 'nu': 'Niue', 
+            'kp': 'North Korea', 'mp': 'Northern Mariana Islands', 'no': 'Norway', 'om': 'Oman', 'pk': 'Pakistan', 
+            'pw': 'Palau', 'ps': 'Palestine', 'pa': 'Panama', 'pg': 'Papua New Guinea', 'py': 'Paraguay', 'pe': 'Peru', 
+            'ph': 'Philippines', 'pn': 'Pitcairn', 'pl': 'Poland', 'pt': 'Portugal', 'pr': 'Puerto Rico', 'qa': 'Qatar', 
+            'cg': 'Republic of the Congo', 're': 'Reunion', 'ro': 'Romania', 'ru': 'Russia', 'rw': 'Rwanda', 
+            'bl': 'Saint Barthelemy', 'sh': 'Saint Helena', 'kn': 'Saint Kitts and Nevis', 'lc': 'Saint Lucia', 
+            'mf': 'Saint Martin', 'pm': 'Saint Pierre and Miquelon', 'vc': 'Saint Vincent and the Grenadines', 
+            'ws': 'Samoa', 'sm': 'San Marino', 'st': 'Sao Tome and Principe', 'sa': 'Saudi Arabia', 'sn': 'Senegal', 
+            'rs': 'Serbia', 'sc': 'Seychelles', 'sl': 'Sierra Leone', 'sg': 'Singapore', 'sx': 'Sint Maarten', 
+            'sk': 'Slovakia', 'si': 'Slovenia', 'sb': 'Solomon Islands', 'so': 'Somalia', 'za': 'South Africa', 
+            'kr': 'South Korea', 'ss': 'South Sudan', 'es': 'Spain', 'lk': 'Sri Lanka', 'sd': 'Sudan', 'sr': 'Suriname', 
+            'sj': 'Svalbard and Jan Mayen', 'sz': 'Swaziland', 'se': 'Sweden', 'ch': 'Switzerland', 'sy': 'Syria', 
+            'tw': 'Taiwan', 'tj': 'Tajikistan', 'tz': 'Tanzania', 'th': 'Thailand', 'tg': 'Togo', 'tk': 'Tokelau', 
+            'to': 'Tonga', 'tt': 'Trinidad and Tobago', 'tn': 'Tunisia', 'tr': 'Turkey', 'tm': 'Turkmenistan', 
+            'tc': 'Turks and Caicos Islands', 'tv': 'Tuvalu', 'vi': 'U.S. Virgin Islands', 'ug': 'Uganda', 
+            'ua': 'Ukraine', 'ae': 'United Arab Emirates', 'gb': 'United Kingdom', 'us': 'United States', 
+            'uy': 'Uruguay', 'uz': 'Uzbekistan', 'vu': 'Vanuatu', 'va': 'Vatican', 've': 'Venezuela', 'vn': 'Vietnam', 
+            'wf': 'Wallis and Futuna', 'eh': 'Western Sahara', 'ye': 'Yemen', 'zm': 'Zambia', 'zw': 'Zimbabwe',
+            'other': 'Other Country'
+        };
+
+        // Default avatar URL
+        const defaultAvatar = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+
+        // Generate unique device ID
+        function generateDeviceId() {
+            const id = 'device_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('deviceId', id);
+            return id;
+        }
+
+        // Toggle between login and register forms
+        showRegister.addEventListener('click', () => {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+        });
+
+        showLogin.addEventListener('click', () => {
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'block';
+        });
+
+        // Handle avatar upload for registration
+        registerAvatarUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Image size should be less than 2MB');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    registerAvatarPreview.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+                selectedAvatarFile = file;
+            }
+        });
+
+        // Handle avatar upload for profile
+        profileAvatarUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Image size should be less than 2MB');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    profileAvatarPreview.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+                selectedAvatarFile = file;
+            }
+        });
+
+        // Upload image to Firebase Storage and return URL
+        async function uploadImage(file, userId) {
+            if (!file) return null;
+            
+            try {
+                const storageRef = storage.ref(`profile_images/${userId}/${file.name}`);
+                const snapshot = await storageRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                return downloadURL;
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                return null;
+            }
+        }
+
+        // Register new user
+        registerBtn.addEventListener('click', async () => {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const username = document.getElementById('register-username').value;
+            const country = document.getElementById('register-country').value;
+            const description = document.getElementById('register-description').value;
+
+            if (!email || !password || !username || !country) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            try {
+                // Check if device already has an account
+                const deviceSnapshot = await database.ref('devices/' + deviceId).once('value');
+                if (deviceSnapshot.exists()) {
+                    throw new Error('This device already has an account. Only one account per device is allowed.');
+                }
+                
+                // Create user with email and password
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Upload profile image if selected
+                let avatarUrl = defaultAvatar;
+                if (selectedAvatarFile) {
+                    avatarUrl = await uploadImage(selectedAvatarFile, user.uid);
+                }
+                
+                // Save user data to database
+                await Promise.all([
+                    database.ref('users/' + user.uid).set({
+                        username: username,
+                        email: email,
+                        country: country,
+                        description: description || '',
+                        avatar: avatarUrl,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP,
+                        status: 'online',
+                        deviceId: deviceId
+                    }),
+                    database.ref('devices/' + deviceId).set({
+                        userId: user.uid,
+                        registeredAt: firebase.database.ServerValue.TIMESTAMP
+                    })
+                ]);
+                
+                alert('Registration successful! Please login.');
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                document.getElementById('register-email').value = '';
+                document.getElementById('register-password').value = '';
+                document.getElementById('register-username').value = '';
+                document.getElementById('register-country').value = '';
+                document.getElementById('register-description').value = '';
+                registerAvatarPreview.src = '';
+                selectedAvatarFile = null;
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        // Login user
+        loginBtn.addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                
+                // Verify device ID
+                const userSnapshot = await database.ref('users/' + currentUser.uid + '/deviceId').once('value');
+                const userDeviceId = userSnapshot.val();
+                
+                if (userDeviceId !== deviceId) {
+                    await auth.signOut();
+                    throw new Error('This account is registered on a different device. Only one device per account is allowed.');
+                }
+                
+                // Update user status to online
+                await database.ref('users/' + currentUser.uid).update({
+                    status: 'online',
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                });
+                
+                // Switch to chat interface
+                authContainer.classList.remove('active');
+                chatContainer.classList.add('active');
+                
+                // Load users and messages
+                loadUsers();
+                setupPresence();
+                loadAllMessages();
+                loadUnreadMessages();
+                loadFollowingList();
+                
+                // Load current user's following count
+                updateFollowingCount();
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        // Logout user
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                // Update user status to offline before signing out
+                if (currentUser) {
+                    await database.ref('users/' + currentUser.uid).update({
+                        status: 'offline',
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                
+                // Remove all listeners
+                for (const listenerId in messageListeners) {
+                    database.ref('messages').off('child_added', messageListeners[listenerId]);
+                }
+                messageListeners = {};
+                
+                for (const listenerId in userListeners) {
+                    database.ref('users/' + listenerId).off('value', userListeners[listenerId]);
+                }
+                userListeners = {};
+                
+                for (const listenerId in followListeners) {
+                    database.ref('follows/' + currentUser.uid + '/' + listenerId).off('value', followListeners[listenerId]);
+                }
+                followListeners = {};
+                
+                await auth.signOut();
+                
+                chatContainer.classList.remove('active');
+                profileContainer.classList.remove('active');
+                messagesContainer.classList.remove('active');
+                authContainer.classList.add('active');
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                currentUser = null;
+                chatMessagesContainer.innerHTML = '';
+                usersList.innerHTML = '';
+                profileView.style.display = 'none';
+                unreadMessages = {};
+                selectedAvatarFile = null;
+            } catch (error) {
+                alert('Error during logout: ' + error.message);
+            }
+        });
+
+        // Show profile edit form
+        profileBtn.addEventListener('click', async () => {
+            chatContainer.classList.remove('active');
+            messagesContainer.classList.remove('active');
+            profileContainer.classList.add('active');
+            
+            try {
+                // Load current profile data
+                const snapshot = await database.ref('users/' + currentUser.uid).once('value');
+                const user = snapshot.val();
+                
+                document.getElementById('profile-username').value = user.username;
+                document.getElementById('profile-country').value = user.country || '';
+                document.getElementById('profile-description').value = user.description || '';
+                profileAvatarPreview.src = user.avatar || defaultAvatar;
+                
+                // Disable username and country fields
+                document.getElementById('profile-username').classList.add('readonly-field');
+                document.getElementById('profile-username').readOnly = true;
+                document.getElementById('profile-country').disabled = true;
+            } catch (error) {
+                alert('Error loading profile: ' + error.message);
+            }
+        });
+
+        // Show messages management
+        messagesBtn.addEventListener('click', () => {
+            chatContainer.classList.remove('active');
+            profileContainer.classList.remove('active');
+            messagesContainer.classList.add('active');
+        });
+
+        // Back to chat from messages management
+        backToChatBtn.addEventListener('click', () => {
+            messagesContainer.classList.remove('active');
+            profileContainer.classList.remove('active');
+            chatContainer.classList.add('active');
+        });
+
+        // Switch between message tabs
+        messageTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                messageTabs.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all tab contents
+                document.querySelectorAll('.messages-tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                
+                // Show selected tab content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-messages-tab`).style.display = 'block';
+                
+                // Load specific data if needed
+                if (tabId === 'following') {
+                    loadFollowingList();
+                }
+            });
+        });
+
+        // Save profile
+        saveProfileBtn.addEventListener('click', async () => {
+            const description = document.getElementById('profile-description').value;
+            
+            try {
+                let avatarUrl = profileAvatarPreview.src;
+                
+                // Upload new image if selected
+                if (selectedAvatarFile) {
+                    avatarUrl = await uploadImage(selectedAvatarFile, currentUser.uid);
+                }
+                
+                // Update profile in database
+                await database.ref('users/' + currentUser.uid).update({
+                    description: description || '',
+                    avatar: avatarUrl
+                });
+                
+                profileContainer.classList.remove('active');
+                chatContainer.classList.add('active');
+                loadUsers(); // Refresh user list
+                
+                // Update profile view if viewing own profile
+                if (currentChatWith === currentUser.uid) {
+                    showUserProfile(currentUser.uid);
+                }
+                
+                selectedAvatarFile = null;
+            } catch (error) {
+                alert('Error saving profile: ' + error.message);
+            }
+        });
+
+        // Cancel profile edit
+        cancelProfileBtn.addEventListener('click', () => {
+            profileContainer.classList.remove('active');
+            chatContainer.classList.add('active');
+            selectedAvatarFile = null;
+        });
+
+        // Setup presence tracking
+        function setupPresence() {
+            const userStatusDatabaseRef = database.ref('users/' + currentUser.uid);
+            
+            // Set user to online when connected
+            userStatusDatabaseRef.update({
+                status: 'online',
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
+            });
+            
+            // Set user to offline when disconnected
+            database.ref('.info/connected').on('value', (snapshot) => {
+                if (snapshot.val() === false) {
+                    return;
+                }
+                
+                userStatusDatabaseRef.onDisconnect().update({
+                    status: 'offline',
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                });
+            });
+        }
+
+        // [All other functions remain the same as in your original code]
+        // Load all users sorted by online status
+        function loadUsers() {
+            database.ref('users').on('value', (snapshot) => {
+                usersList.innerHTML = '';
+                const users = snapshot.val();
+                const usersArray = [];
+                
+                for (const userId in users) {
+                    if (userId === currentUser.uid) continue; // Skip current user
+                    usersArray.push({ id: userId, ...users[userId] });
+                }
+                
+                // Sort users: online first, then by last seen (newest first)
+                usersArray.sort((a, b) => {
+                    if (a.status === 'online' && b.status !== 'online') return -1;
+                    if (a.status !== 'online' && b.status === 'online') return 1;
+                    return (b.lastSeen || 0) - (a.lastSeen || 0);
+                });
+                
+                usersArray.forEach(user => {
+                    const userItem = document.createElement('li');
+                    userItem.className = 'user-item';
+                    
+                    // Check if user is blocked
+                    database.ref('blocks/' + currentUser.uid + '/' + user.id).once('value')
+                        .then((blockSnapshot) => {
+                            if (blockSnapshot.exists()) {
+                                userItem.innerHTML = `
+                                    <div class="user-status offline"></div>
+                                    <img class="user-avatar" src="${user.avatar || defaultAvatar}" alt="${user.username}">
+                                    <div class="user-info">
+                                        <div class="user-name">${user.username} (Blocked)</div>
+                                        <div class="user-country">
+                                            <span class="country-flag">${countryFlags[user.country] || '🌍'}</span>
+                                            ${countryNames[user.country] || 'Other Country'}
+                                        </div>
+                                    </div>
+                                    <div class="last-seen">${formatLastSeen(user.lastSeen)}</div>
+                                    <div class="user-actions">
+                                        <button class="action-btn delete-btn" data-userid="${user.id}">×</button>
+                                    </div>
+                                `;
+                                userItem.style.opacity = '0.6';
+                            } else {
+                                // Check if user is followed
+                                database.ref('follows/' + currentUser.uid + '/' + user.id).once('value')
+                                    .then((followSnapshot) => {
+                                        const isFollowing = followSnapshot.exists();
+                                        
+                                        // Get follower count
+                                        database.ref('follows/' + user.id).once('value')
+                                            .then((followersSnapshot) => {
+                                                const followersCount = followersSnapshot.numChildren();
+                                                
+                                                userItem.innerHTML = `
+                                                    <div class="user-status ${user.status === 'online' ? 'online' : 'offline'}"></div>
+                                                    <img class="user-avatar" src="${user.avatar || defaultAvatar}" alt="${user.username}">
+                                                    <div class="user-info">
+                                                        <div class="user-name">${user.username}</div>
+                                                        <div class="user-country">
+                                                            <span class="country-flag">${countryFlags[user.country] || '🌍'}</span>
+                                                            ${countryNames[user.country] || 'Other Country'}
+                                                        </div>
+                                                        <div class="follower-count">${followersCount} follower${followersCount !== 1 ? 's' : ''}</div>
+                                                    </div>
+                                                    <div class="last-seen">${formatLastSeen(user.lastSeen)}</div>
+                                                    <div class="user-actions">
+                                                        <button class="action-btn block-btn" data-userid="${user.id}">B</button>
+                                                        <button class="action-btn ${isFollowing ? 'unfollow-btn' : 'follow-btn'}" data-userid="${user.id}">${isFollowing ? '×' : '+'}</button>
+                                                    </div>
+                                                `;
+                                                
+                                                // Add event listeners to action buttons
+                                                const blockBtn = userItem.querySelector('.block-btn');
+                                                if (blockBtn) {
+                                                    blockBtn.addEventListener('click', (e) => {
+                                                        e.stopPropagation();
+                                                        blockUser(user.id);
+                                                    });
+                                                }
+                                                
+                                                const followBtn = userItem.querySelector('.follow-btn, .unfollow-btn');
+                                                if (followBtn) {
+                                                    followBtn.addEventListener('click', (e) => {
+                                                        e.stopPropagation();
+                                                        if (followBtn.classList.contains('follow-btn')) {
+                                                            followUser(user.id);
+                                                        } else {
+                                                            unfollowUser(user.id);
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                    });
+                            }
+                            
+                            userItem.addEventListener('click', () => {
+                                // Remove active class from all users
+                                document.querySelectorAll('.user-item').forEach(item => {
+                                    item.classList.remove('active');
+                                });
+                                
+                                // Add active class to selected user
+                                userItem.classList.add('active');
+                                
+                                // Show profile and messages
+                                showUserProfile(user.id);
+                                loadMessages(user.id);
+                            });
+                            
+                            usersList.appendChild(userItem);
+                        });
+                });
+            });
+        }
+
+        // Show user profile
+        function showUserProfile(userId) {
+            // Remove previous listener if exists
+            if (userListeners[userId]) {
+                database.ref('users/' + userId).off('value', userListeners[userId]);
+            }
+            
+            // Add new listener for real-time updates
+            userListeners[userId] = database.ref('users/' + userId).on('value', (snapshot) => {
+                const user = snapshot.val();
+                if (!user) return;
+                
+                viewProfileName.textContent = user.username;
+                viewProfileAvatar.src = user.avatar || defaultAvatar;
+                viewProfileCountry.innerHTML = `
+                    <span class="profile-country-flag">${countryFlags[user.country] || '🌍'}</span>
+                    ${countryNames[user.country] || 'Other Country'}
+                `;
+                viewProfileDescription.textContent = user.description || 'No description provided';
+                viewProfileStatus.textContent = user.status === 'online' ? 'Online' : `Last seen ${formatLastSeen(user.lastSeen)}`;
+                
+                // Update follower count
+                database.ref('follows/' + userId).once('value')
+                    .then((followersSnapshot) => {
+                        const count = followersSnapshot.numChildren();
+                        followersCount.textContent = count;
+                    });
+                
+                // Check if current user is following this user
+                database.ref('follows/' + currentUser.uid + '/' + userId).once('value')
+                    .then((followSnapshot) => {
+                        if (followSnapshot.exists()) {
+                            followBtn.style.display = 'none';
+                            unfollowBtn.style.display = 'block';
+                            unfollowBtn.onclick = () => unfollowUser(userId);
+                        } else {
+                            followBtn.style.display = 'block';
+                            unfollowBtn.style.display = 'none';
+                            followBtn.onclick = () => followUser(userId);
+                        }
+                    });
+                
+                profileView.style.display = 'block';
+                currentChatWith = userId;
+            });
+        }
+
+        // Update current user's following count
+        function updateFollowingCount() {
+            database.ref('follows/' + currentUser.uid).once('value')
+                .then((snapshot) => {
+                    const count = snapshot.numChildren();
+                    followingCount.textContent = count;
+                });
+        }
+
+        // Follow a user
+        function followUser(userId) {
+            database.ref('follows/' + currentUser.uid + '/' + userId).set({
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            })
+            .then(() => {
+                // Add real-time listener for follow status
+                if (!followListeners[userId]) {
+                    followListeners[userId] = database.ref('follows/' + currentUser.uid + '/' + userId).on('value', (snapshot) => {
+                        if (!snapshot.exists()) {
+                            // User was unfollowed
+                            if (currentChatWith === userId) {
+                                showUserProfile(userId);
+                            }
+                        }
+                    });
+                }
+                
+                loadUsers(); // Refresh user list
+                loadFollowingList(); // Refresh following list
+                updateFollowingCount(); // Update following count
+                
+                if (currentChatWith === userId) {
+                    showUserProfile(userId); // Update profile view
+                }
+            })
+            .catch((error) => {
+                alert('Error following user: ' + error.message);
+            });
+        }
+
+        // Unfollow a user
+        function unfollowUser(userId) {
+            database.ref('follows/' + currentUser.uid + '/' + userId).remove()
+                .then(() => {
+                    loadUsers(); // Refresh user list
+                    loadFollowingList(); // Refresh following list
+                    updateFollowingCount(); // Update following count
+                    
+                    if (currentChatWith === userId) {
+                        showUserProfile(userId); // Update profile view
+                    }
+                })
+                .catch((error) => {
+                    alert('Error unfollowing user: ' + error.message);
+                });
+        }
+
+        // Block a user
+        function blockUser(userId) {
+            if (confirm('Are you sure you want to block this user?')) {
+                database.ref('blocks/' + currentUser.uid + '/' + userId).set(true)
+                    .then(() => {
+                        alert('User blocked successfully');
+                        loadUsers(); // Refresh user list
+                    })
+                    .catch((error) => {
+                        alert('Error blocking user: ' + error.message);
+                    });
+            }
+        }
+
+        // Delete a user (remove from your contacts)
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to remove this user from your contacts?')) {
+                // Remove from follows
+                database.ref('follows/' + currentUser.uid + '/' + userId).remove()
+                    .then(() => {
+                        alert('User removed successfully');
+                        loadUsers(); // Refresh user list
+                        chatMessagesContainer.innerHTML = '';
+                        profileView.style.display = 'none';
+                    })
+                    .catch((error) => {
+                        alert('Error removing user: ' + error.message);
+                    });
+            }
+        }
+
+        // Format last seen time
+        function formatLastSeen(timestamp) {
+            if (!timestamp) return 'Never';
+            
+            const now = Date.now();
+            const lastSeen = new Date(timestamp);
+            const diff = now - timestamp;
+            
+            if (diff < 60000) { // Less than 1 minute
+                return 'Just now';
+            } else if (diff < 3600000) { // Less than 1 hour
+                const minutes = Math.floor(diff / 60000);
+                return `${minutes} min${minutes !== 1 ? 's' : ''} ago`;
+            } else if (diff < 86400000) { // Less than 1 day
+                const hours = Math.floor(diff / 3600000);
+                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diff / 86400000);
+                return `${days} day${days !== 1 ? 's' : ''} ago`;
+            }
+        }
+
+        // Format message timestamp for tables
+        function formatMessageTime(timestamp) {
+            if (!timestamp) return '';
+            
+            const date = new Date(timestamp);
+            return date.toLocaleString([], { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
+        // Load messages between current user and selected user
+        function loadMessages(otherUserId) {
+            chatMessagesContainer.innerHTML = '';
+            
+            // Remove previous listener if exists
+            if (messageListeners[otherUserId]) {
+                database.ref('messages').off('child_added', messageListeners[otherUserId]);
+            }
+            
+            // Get messages where current user is either sender or receiver
+            const messagesRef = database.ref('messages')
+                .orderByChild('conversationId')
+                .equalTo(getConversationId(currentUser.uid, otherUserId));
+            
+            // Add new listener
+            messageListeners[otherUserId] = messagesRef.on('child_added', (snapshot) => {
+                const message = snapshot.val();
+                displayMessage(message);
+                
+                // Mark as read if it's a received message
+                if (message.receiverId === currentUser.uid && !message.read) {
+                    database.ref('messages/' + snapshot.key).update({ read: true });
+                    delete unreadMessages[snapshot.key];
+                    loadUnreadMessages();
+                }
+            });
+        }
+
+        // Display a message in the chat area
+        function displayMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            
+            if (message.receiverId === currentUser.uid && !message.read) {
+                messageElement.classList.add('unread');
+            }
+            
+            // Get username and avatar of the sender
+            database.ref('users/' + message.senderId).once('value', (snapshot) => {
+                const user = snapshot.val();
+                const username = user.username;
+                const avatar = user.avatar || defaultAvatar;
+                
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <img class="message-avatar" src="${avatar}" alt="${username}">
+                        <div class="message-sender">
+                            ${message.senderId === currentUser.uid ? 'You' : username}
+                        </div>
+                        <span class="message-time">${formatTime(message.timestamp)}</span>
+                    </div>
+                    <div class="message-content">${message.content}</div>
+                `;
+                
+                chatMessagesContainer.appendChild(messageElement);
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            });
+        }
+
+        // Format message timestamp
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Generate conversation ID for two users
+        function getConversationId(userId1, userId2) {
+            return [userId1, userId2].sort().join('_');
+        }
+
+        // Load all messages for the current user
+        function loadAllMessages() {
+            allMessagesList.innerHTML = '';
+            
+            // Get all messages where current user is either sender or receiver
+            database.ref('messages')
+                .orderByChild('conversationId')
+                .startAt(getConversationId(currentUser.uid, ''))
+                .endAt(getConversationId(currentUser.uid, '~'))
+                .once('value')
+                .then((snapshot) => {
+                    const messages = snapshot.val();
+                    const messagesArray = [];
+                    
+                    for (const messageId in messages) {
+                        messagesArray.push({ id: messageId, ...messages[messageId] });
+                    }
+                    
+                    // Sort by timestamp (newest first)
+                    messagesArray.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    // Process each message
+                    const promises = messagesArray.map(message => {
+                        return new Promise((resolve) => {
+                            // Get sender info
+                            database.ref('users/' + message.senderId).once('value', (userSnapshot) => {
+                                const user = userSnapshot.val();
+                                const isCurrentUser = message.senderId === currentUser.uid;
+                                const isRead = message.read || isCurrentUser;
+                                
+                                const row = document.createElement('tr');
+                                row.className = isRead ? 'message-row' : 'message-row unread-message';
+                                row.innerHTML = `
+                                    <td>
+                                        <div class="message-user">
+                                            <img class="message-avatar-small" src="${user.avatar || defaultAvatar}" alt="${user.username}">
+                                            ${isCurrentUser ? 'You' : user.username}
+                                        </div>
+                                    </td>
+                                    <td>${message.content}</td>
+                                    <td>${formatMessageTime(message.timestamp)}</td>
+                                    <td>${isCurrentUser ? 'Sent' : (isRead ? 'Read' : 'Unread')}</td>
+                                `;
+                                
+                                row.addEventListener('click', () => {
+                                    // Open chat with this user
+                                    const otherUserId = isCurrentUser ? message.receiverId : message.senderId;
+                                    currentChatWith = otherUserId;
+                                    
+                                    // Switch to chat interface
+                                    messagesContainer.classList.remove('active');
+                                    chatContainer.classList.add('active');
+                                    
+                                    // Load chat with this user
+                                    showUserProfile(otherUserId);
+                                    loadMessages(otherUserId);
+                                });
+                                
+                                allMessagesList.appendChild(row);
+                                resolve();
+                            });
+                        });
+                    });
+                    
+                    return Promise.all(promises);
+                });
+        }
+
+        // Load unread messages for the current user
+        function loadUnreadMessages() {
+            unreadMessagesList.innerHTML = '';
+            
+            // Get all messages where current user is receiver and message is unread
+            database.ref('messages')
+                .orderByChild('receiverId')
+                .equalTo(currentUser.uid)
+                .once('value')
+                .then((snapshot) => {
+                    const messages = snapshot.val();
+                    const messagesArray = [];
+                    
+                    for (const messageId in messages) {
+                        if (!messages[messageId].read) {
+                            messagesArray.push({ id: messageId, ...messages[messageId] });
+                            unreadMessages[messageId] = true;
+                        }
+                    }
+                    
+                    // Sort by timestamp (newest first)
+                    messagesArray.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    // Process each message
+                    const promises = messagesArray.map(message => {
+                        return new Promise((resolve) => {
+                            // Get sender info
+                            database.ref('users/' + message.senderId).once('value', (userSnapshot) => {
+                                const user = userSnapshot.val();
+                                
+                                const row = document.createElement('tr');
+                                row.className = 'message-row unread-message';
+                                row.innerHTML = `
+                                    <td>
+                                        <div class="message-user">
+                                            <img class="message-avatar-small" src="${user.avatar || defaultAvatar}" alt="${user.username}">
+                                            ${user.username}
+                                        </div>
+                                    </td>
+                                    <td>${message.content}</td>
+                                    <td>${formatMessageTime(message.timestamp)}</td>
+                                    <td><button class="mark-read-btn" data-messageid="${message.id}">Mark as Read</button></td>
+                                `;
+                                
+                                row.addEventListener('click', () => {
+                                    // Open chat with this user
+                                    currentChatWith = message.senderId;
+                                    
+                                    // Switch to chat interface
+                                    messagesContainer.classList.remove('active');
+                                    chatContainer.classList.add('active');
+                                    
+                                    // Load chat with this user
+                                    showUserProfile(message.senderId);
+                                    loadMessages(message.senderId);
+                                });
+                                
+                                // Add event listener to mark as read button
+                                const markReadBtn = row.querySelector('.mark-read-btn');
+                                markReadBtn.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    markMessageAsRead(message.id);
+                                });
+                                
+                                unreadMessagesList.appendChild(row);
+                                resolve();
+                            });
+                        });
+                    });
+                    
+                    return Promise.all(promises);
+                });
+        }
+
+        // Load list of users the current user is following
+        function loadFollowingList() {
+            followingList.innerHTML = '';
+            
+            database.ref('follows/' + currentUser.uid).once('value')
+                .then((snapshot) => {
+                    const follows = snapshot.val();
+                    if (!follows) return;
+                    
+                    const userIds = Object.keys(follows);
+                    const promises = userIds.map(userId => {
+                        return new Promise((resolve) => {
+                            // Get user info
+                            database.ref('users/' + userId).once('value', (userSnapshot) => {
+                                const user = userSnapshot.val();
+                                
+                                // Get follower count
+                                database.ref('follows/' + userId).once('value', (followersSnapshot) => {
+                                    const followersCount = followersSnapshot.numChildren();
+                                    
+                                    const row = document.createElement('tr');
+                                    row.className = 'message-row';
+                                    row.innerHTML = `
+                                        <td>
+                                            <div class="message-user">
+                                                <img class="message-avatar-small" src="${user.avatar || defaultAvatar}" alt="${user.username}">
+                                                ${user.username}
+                                            </div>
+                                        </td>
+                                        <td>${user.status === 'online' ? 'Online' : 'Offline'}</td>
+                                        <td>${followersCount}</td>
+                                        <td>
+                                            <button class="unfollow-btn" data-userid="${userId}">Unfollow</button>
+                                        </td>
+                                    `;
+                                    
+                                    // Add event listener to unfollow button
+                                    const unfollowBtn = row.querySelector('.unfollow-btn');
+                                    unfollowBtn.addEventListener('click', (e) => {
+                                        e.stopPropagation();
+                                        unfollowUser(userId);
+                                    });
+                                    
+                                    row.addEventListener('click', () => {
+                                        // Open chat with this user
+                                        currentChatWith = userId;
+                                        
+                                        // Switch to chat interface
+                                        messagesContainer.classList.remove('active');
+                                        chatContainer.classList.add('active');
+                                        
+                                        // Load chat with this user
+                                        showUserProfile(userId);
+                                        loadMessages(userId);
+                                    });
+                                    
+                                    followingList.appendChild(row);
+                                    resolve();
+                                });
+                            });
+                        });
+                    });
+                    
+                    return Promise.all(promises);
+                });
+        }
+
+        // Mark message as read
+        function markMessageAsRead(messageId) {
+            database.ref('messages/' + messageId).update({ read: true })
+                .then(() => {
+                    delete unreadMessages[messageId];
+                    loadUnreadMessages();
+                })
+                .catch((error) => {
+                    alert('Error marking message as read: ' + error.message);
+                });
+        }
+
+        // Send message
+        function sendMessage() {
+            if (!currentChatWith) {
+                alert('Please select a user to chat with');
+                return;
+            }
+            
+            const content = messageInput.value.trim();
+            if (!content) return;
+            
+            const message = {
+                senderId: currentUser.uid,
+                receiverId: currentChatWith,
+                content: content,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                conversationId: getConversationId(currentUser.uid, currentChatWith),
+                read: false
+            };
+            
+            database.ref('messages').push(message)
+                .then(() => {
+                    messageInput.value = '';
+                    loadAllMessages(); // Refresh all messages list
+                })
+                .catch((error) => {
+                    alert('Error sending message: ' + error.message);
+                });
+        }
+
+        // Send message on button click or Enter key
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Check auth state on page load
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    // Verify device ID
+                    const userSnapshot = await database.ref('users/' + user.uid + '/deviceId').once('value');
+                    const userDeviceId = userSnapshot.val();
+                    
+                    if (userDeviceId !== deviceId) {
+                        await auth.signOut();
+                        throw new Error('This account is registered on a different device. Only one device per account is allowed.');
+                    }
+                    
+                    currentUser = user;
+                    authContainer.classList.remove('active');
+                    chatContainer.classList.add('active');
+                    
+                    // Update user status to online
+                    await database.ref('users/' + currentUser.uid).update({
+                        status: 'online',
+                        lastSeen: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    
+                    // Load users and setup presence
+                    loadUsers();
+                    setupPresence();
+                    loadAllMessages();
+                    loadUnreadMessages();
+                    loadFollowingList();
+                    updateFollowingCount();
+                } catch (error) {
+                    alert(error.message);
+                    chatContainer.classList.remove('active');
+                    messagesContainer.classList.remove('active');
+                    authContainer.classList.add('active');
+                    loginForm.style.display = 'block';
+                }
+            } else {
+                currentUser = null;
+                chatContainer.classList.remove('active');
+                profileContainer.classList.remove('active');
+                messagesContainer.classList.remove('active');
+                authContainer.classList.add('active');
+            }
+        });
+    </script>
+
+<script>
+// Tambahan Fitur Translate + Scroll + Fix Responsif
+
+// Auto-scroll saat pesan baru
+const chatContainer = document.getElementById('chat-messages-container');
+if (chatContainer) {
+    const observer = new MutationObserver(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+    observer.observe(chatContainer, { childList: true });
+}
+
+// Translate Pesan Otomatis
+async function translateText(text, targetLang = 'en') {
+    try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+        const data = await res.json();
+        return data[0][0][0];
+    } catch {
+        return '';
+    }
+}
+
+// Integrasi Translate dalam chat (jika diinginkan bisa toggle aktif/tidak)
+async function appendTranslatedMessage(div, originalText) {
+    const translated = await translateText(originalText);
+    if (translated && translated !== originalText) {
+        const translateDiv = document.createElement('div');
+        translateDiv.style.fontSize = '0.8em';
+        translateDiv.style.opacity = '0.7';
+        translateDiv.innerText = `(Translated: ${translated})`;
+        div.appendChild(translateDiv);
+    }
+}
+</script>
+
+</body>
+</html>
