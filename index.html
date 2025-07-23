@@ -18,7 +18,7 @@
         }
 
         body {
-            background-color: #f0f2f5;
+            background: linear-gradient(to right, #f0f2f5, #e6e9ed);
             color: #333;
             touch-action: manipulation;
         }
@@ -26,12 +26,13 @@
         .container {
             display: flex;
             flex-direction: column;
-            max-width: 100%;
-            margin: 0 auto;
-            height: 100vh;
+            max-width: 1200px;
+            margin: 20px auto;
+            height: calc(100vh - 40px);
             background-color: #fff;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            border-radius: 15px;
         }
 
         .auth-container, .chat-container, .profile-container, .messages-container {
@@ -61,6 +62,12 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
 
         .auth-form h2 {
@@ -117,6 +124,7 @@
         button:hover {
             background-color: #0056b3;
             transform: translateY(-2px);
+            animation: shake 0.5s;
         }
 
         .toggle-auth {
@@ -138,9 +146,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            padding: 15px 25px;
             background-color: #fff;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #e6e6e6;
             position: sticky;
             top: 0;
             z-index: 10;
@@ -162,19 +170,24 @@
         }
 
         .users-sidebar {
-            width: 100%;
+            width: 300px;
             background-color: #f8f9fa;
-            padding: 15px;
+            padding: 20px;
             overflow-y: auto;
-            border-bottom: 1px solid #ddd;
-            max-height: 200px;
+            border-right: 1px solid #e6e6e6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #recent-chats-container {
+            margin-top: 20px;
         }
 
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 0;
             overflow: hidden;
             background-color: #e9ebee;
         }
@@ -279,26 +292,24 @@
         .chat-messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
-            margin-bottom: 10px;
-            background-color: #fff;
-            border-radius: 8px;
+            padding: 30px;
             scroll-behavior: smooth;
         }
 
         .message {
-            margin-bottom: 15px;
-            padding: 12px 18px;
-            border-radius: 18px;
+            margin-bottom: 20px;
+            padding: 15px 22px;
+            border-radius: 22px;
             background-color: #f0f2f5;
-            animation: messageIn 0.3s ease;
+            animation: messageIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             word-break: break-word;
-            max-width: 70%;
+            max-width: 65%;
             align-self: flex-start;
+            position: relative;
         }
 
         .message.sent {
-            background-color: #007bff;
+            background: linear-gradient(to right, #007bff, #0056b3);
             color: white;
             align-self: flex-end;
         }
@@ -316,7 +327,7 @@
         .message-header {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .message-avatar {
@@ -347,22 +358,23 @@
 
         .message-input-container {
             display: flex;
-            gap: 10px;
-            padding: 15px;
+            gap: 15px;
+            padding: 20px;
             position: sticky;
             bottom: 0;
-            background-color: #f0f2f5;
-            border-top: 1px solid #ddd;
+            background-color: #fff;
+            border-top: 1px solid #e6e6e6;
         }
 
         .message-input {
             flex: 1;
-            padding: 12px 18px;
+            padding: 15px 22px;
             border: 1px solid #ccc;
-            border-radius: 24px;
-            background-color: #fff;
+            border-radius: 28px;
+            background-color: #f0f2f5;
             color: #333;
             font-size: 1rem;
+            transition: all 0.3s;
         }
 
         .message-input:focus {
@@ -372,9 +384,14 @@
         }
 
         .send-button {
-            width: 80px;
-            padding: 12px;
-            border-radius: 24px;
+            width: 56px;
+            height: 56px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
         }
 
         .logout-btn {
@@ -909,6 +926,43 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
+        /* Themes */
+        .theme-dark { background-color: #121212; color: #fff; }
+        .theme-dark .container { background-color: #1e1e1e; }
+        .theme-dark .auth-form, .theme-dark .chat-header, .theme-dark .users-sidebar, .theme-dark .message-input-container { background-color: #2c2c2c; }
+        .theme-dark .message { background-color: #383838; }
+        .theme-dark .message.sent { background: linear-gradient(to right, #007bff, #0056b3); }
+
+        .theme-light { background-color: #f0f2f5; color: #333; }
+        .theme-light .container { background-color: #fff; }
+        .theme-light .auth-form, .theme-light .chat-header, .theme-light .users-sidebar, .theme-light .message-input-container { background-color: #f8f9fa; }
+        .theme-light .message { background-color: #e9ebee; }
+        .theme-light .message.sent { background-color: #007bff; color: white; }
+
+        .theme-blue .message.sent { background: linear-gradient(to right, #007bff, #0056b3); }
+        .theme-green .message.sent { background: linear-gradient(to right, #28a745, #1e7e34); }
+        .theme-purple .message.sent { background: linear-gradient(to right, #6f42c1, #563d7c); }
+        .theme-orange .message.sent { background: linear-gradient(to right, #fd7e14, #e3640a); }
+        .theme-pink .message.sent { background: linear-gradient(to right, #e83e8c, #d63384); }
+        .theme-red .message.sent { background: linear-gradient(to right, #dc3545, #c82333); }
+        .theme-teal .message.sent { background: linear-gradient(to right, #20c997, #17a2b8); }
+        .theme-cyan .message.sent { background: linear-gradient(to right, #17a2b8, #117a8b); }
+        .theme-yellow .message.sent { background: linear-gradient(to right, #ffc107, #e0a800); }
+        .theme-gray .message.sent { background: linear-gradient(to right, #6c757d, #5a6268); }
+        .theme-brown .message.sent { background: linear-gradient(to right, #a1887f, #795548); }
+        .theme-indigo .message.sent { background: linear-gradient(to right, #6610f2, #4a00e0); }
+        .theme-lime .message.sent { background: linear-gradient(to right, #cddc39, #afb42b); }
+        .theme-amber .message.sent { background: linear-gradient(to right, #ffc107, #ffab00); }
+        .theme-deep-orange .message.sent { background: linear-gradient(to right, #ff5722, #e64a19); }
+        .theme-deep-purple .message.sent { background: linear-gradient(to right, #673ab7, #512da8); }
+        .theme-light-blue .message.sent { background: linear-gradient(to right, #03a9f4, #0288d1); }
+        .theme-light-green .message.sent { background: linear-gradient(to right, #8bc34a, #689f38); }
+        .theme-light-pink .message.sent { background: linear-gradient(to right, #e91e63, #c2185b); }
+        .theme-light-teal .message.sent { background: linear-gradient(to right, #009688, #00796b); }
+        .theme-light-cyan .message.sent { background: linear-gradient(to right, #00bcd4, #0097a7); }
+        .theme-light-yellow .message.sent { background: linear-gradient(to right, #ffeb3b, #fbc02d); }
+
     </style>
 </head>
 <body>
@@ -1222,8 +1276,15 @@
             </div>
             <div class="chat-main">
                 <div class="users-sidebar">
+                    <div class="search-container">
+                        <input type="text" id="user-search-input" placeholder="Search by username...">
+                        <select id="country-filter-select">
+                            <option value="">Filter by country</option>
+                        </select>
+                    </div>
                     <h3>Online Users</h3>
                     <ul id="users-list" class="users-list"></ul>
+                    <div id="recent-chats-container"></div>
                 </div>
                 <div class="chat-area">
                     <div id="profile-view" class="profile-view">
@@ -1290,6 +1351,36 @@
                 <div class="form-group">
                     <label for="profile-description">Profile Description</label>
                     <textarea id="profile-description" placeholder="Tell others about yourself"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="theme-select">Chat Theme</label>
+                    <select id="theme-select">
+                        <option value="default">Default</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="purple">Purple</option>
+                        <option value="orange">Orange</option>
+                        <option value="pink">Pink</option>
+                        <option value="red">Red</option>
+                        <option value="teal">Teal</option>
+                        <option value="cyan">Cyan</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="gray">Gray</option>
+                        <option value="brown">Brown</option>
+                        <option value="indigo">Indigo</option>
+                        <option value="lime">Lime</option>
+                        <option value="amber">Amber</option>
+                        <option value="deep-orange">Deep Orange</option>
+                        <option value="deep-purple">Deep Purple</option>
+                        <option value="light-blue">Light Blue</option>
+                        <option value="light-green">Light Green</option>
+                        <option value="light-pink">Light Pink</option>
+                        <option value="light-teal">Light Teal</option>
+                        <option value="light-cyan">Light Cyan</option>
+                        <option value="light-yellow">Light Yellow</option>
+                    </select>
                 </div>
                 <div class="form-actions">
                     <button id="save-profile-btn" class="profile-btn">Save Profile</button>
@@ -2202,6 +2293,31 @@
             selectedAvatarFile = null;
         });
 
+        document.getElementById('theme-select').addEventListener('change', (e) => {
+            const theme = e.target.value;
+            document.body.className = `theme-${theme}`;
+        });
+
+        const userSearchInput = document.getElementById('user-search-input');
+        const countryFilterSelect = document.getElementById('country-filter-select');
+
+        userSearchInput.addEventListener('input', () => {
+            loadUsers({ username: userSearchInput.value, country: countryFilterSelect.value });
+        });
+
+        countryFilterSelect.addEventListener('change', () => {
+            loadUsers({ username: userSearchInput.value, country: countryFilterSelect.value });
+        });
+
+        function populateCountryFilter() {
+            for (const code in countryNames) {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = countryNames[code];
+                countryFilterSelect.appendChild(option);
+            }
+        }
+
         // Setup presence tracking
         function setupPresence() {
             const userStatusDatabaseRef = database.ref('users/' + currentUser.uid);
@@ -2257,15 +2373,22 @@
         }
 
         // Load all users sorted by online status
-        function loadUsers() {
+        function loadUsers(filter = {}) {
             database.ref('users').on('value', (snapshot) => {
                 usersList.innerHTML = '';
                 const users = snapshot.val();
-                const usersArray = [];
+                let usersArray = [];
                 
                 for (const userId in users) {
                     if (userId === currentUser.uid) continue; // Skip current user
                     usersArray.push({ id: userId, ...users[userId] });
+                }
+
+                if (filter.username) {
+                    usersArray = usersArray.filter(user => user.username.toLowerCase().includes(filter.username.toLowerCase()));
+                }
+                if (filter.country) {
+                    usersArray = usersArray.filter(user => user.country === filter.country);
                 }
                 
                 // Sort users: online first, then by last seen (newest first)
@@ -3247,9 +3370,42 @@
             });
         }
 
+        function loadRecentChats() {
+            const recentChatsRef = database.ref('messages').orderByChild('timestamp').limitToLast(100);
+            recentChatsRef.on('value', snapshot => {
+                const recentChats = {};
+                snapshot.forEach(childSnapshot => {
+                    const message = childSnapshot.val();
+                    if (message.senderId === currentUser.uid) {
+                        recentChats[message.receiverId] = message;
+                    } else if (message.receiverId === currentUser.uid) {
+                        recentChats[message.senderId] = message;
+                    }
+                });
+
+                const recentChatsContainer = document.getElementById('recent-chats-container');
+                recentChatsContainer.innerHTML = '<h3>Recent Chats</h3>';
+                const list = document.createElement('ul');
+                for (const userId in recentChats) {
+                    database.ref('users/' + userId).once('value').then(userSnapshot => {
+                        const user = userSnapshot.val();
+                        const item = document.createElement('li');
+                        item.textContent = user.username;
+                        item.addEventListener('click', () => {
+                            showUserProfile(userId);
+                            loadMessages(userId);
+                        });
+                        list.appendChild(item);
+                    });
+                }
+                recentChatsContainer.appendChild(list);
+            });
+        }
+
         // Check auth state on page load
         auth.onAuthStateChanged(async (user) => {
             if (user) {
+                populateCountryFilter();
                 try {
                     // Verify device ID
                     const userSnapshot = await database.ref('users/' + user.uid + '/deviceId').once('value');
@@ -3293,6 +3449,7 @@
                     
                     // Load users and setup presence
                     loadUsers();
+                    loadRecentChats();
                     setupPresence();
                     setupMessageManagementListeners();
                     updateFollowingCount();
