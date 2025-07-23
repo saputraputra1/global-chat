@@ -898,6 +898,14 @@
         .control-buttons {
             display: flex;
             gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+
+        .control-buttons::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, and Opera */
         }
 
         .control-btn {
@@ -3241,6 +3249,40 @@
                     alert('Please complete face verification first.');
                 }
             });
+
+            // Auto-scroll for control buttons
+            const controlButtons = document.querySelector('.control-buttons');
+            let scrollInterval;
+
+            controlButtons.addEventListener('mousemove', (e) => {
+                const rect = controlButtons.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const width = rect.width;
+
+                if (x < 50) { // Scroll left
+                    startScrolling(-5);
+                } else if (x > width - 50) { // Scroll right
+                    startScrolling(5);
+                } else {
+                    stopScrolling();
+                }
+            });
+
+            controlButtons.addEventListener('mouseleave', () => {
+                stopScrolling();
+            });
+
+            function startScrolling(speed) {
+                if (scrollInterval) return;
+                scrollInterval = setInterval(() => {
+                    controlButtons.scrollLeft += speed;
+                }, 20);
+            }
+
+            function stopScrolling() {
+                clearInterval(scrollInterval);
+                scrollInterval = null;
+            }
         });
     </script>
 </body>
