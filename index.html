@@ -200,6 +200,7 @@
             display: flex;
             overflow-x: auto;
             padding-bottom: 5px;
+            white-space: nowrap;
         }
 
         .user-item {
@@ -2831,13 +2832,20 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Translation API error');
+                    const errorData = await response.json();
+                    console.error('Translation API error:', errorData);
+                    throw new Error(`Translation API error: ${errorData.message}`);
                 }
 
                 const data = await response.json();
-                return data.data.translations.translatedText || text;
+                if (data.data && data.data.translations && data.data.translations.translatedText) {
+                    return data.data.translations.translatedText;
+                } else {
+                    return text;
+                }
             } catch (error) {
                 console.error('Translation error:', error);
+                alert(`Translation failed: ${error.message}`);
                 return text; // Return original text if translation fails
             }
         }
@@ -2887,16 +2895,6 @@
             const content = messageInput.value.trim();
             if (!content) return;
 
-            // Auto-ban for inappropriate content
-            const bannedWords = ['rasis', 'bullying', 'pelecehan', 'ancaman', 'kontol', 'memek', 'anjing', 'asu', 'bangsat', 'bajingan', 'brengsek', 'rasist', 'bully', 'harassment', 'threat', 'dick', 'pussy', 'dog', 'bitch', 'asshole'];
-            for (const word of bannedWords) {
-                if (content.toLowerCase().includes(word)) {
-                    permBanUser(currentUser.uid, 'Menggunakan bahasa yang tidak pantas.');
-                    alert('Anda telah diblokir secara permanen karena menggunakan bahasa yang tidak pantas.');
-                    logoutBtn.click();
-                    return;
-                }
-            }
 
             // Get receiver's language preference for automatic translation
             let receiverLanguage = 'en';
@@ -3229,7 +3227,11 @@
                             const data = await response.json();
                             if (data.faces && data.faces.length > 0) {
                                 const detectedGender = data.faces[0].attributes.gender.value.toLowerCase();
-                                registerGender.value = detectedGender;
+                                if(detectedGender === 'male' || detectedGender === 'female') {
+                                    registerGender.value = detectedGender;
+                                } else {
+                                    registerGender.value = 'other';
+                                }
                                 faceVerified = true;
                                 alert('Face verification successful! Gender has been set automatically.');
                                 registerBtn.disabled = false;
