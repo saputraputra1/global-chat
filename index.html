@@ -1111,6 +1111,15 @@
                     <input type="password" id="register-password" placeholder="Create a password">
                 </div>
                 <div class="form-group">
+                    <label for="register-gender">Jenis Kelamin</label>
+                    <select id="register-gender">
+                        <option value="">Pilih Jenis Kelamin</option>
+                        <option value="male">Pria</option>
+                        <option value="female">Wanita</option>
+                        <option value="other">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="register-country">Country</label>
                     <input type="text" id="register-country" class="readonly-field" readonly>
                 </div>
@@ -1652,8 +1661,9 @@
             const province = document.getElementById('register-province').value;
             const city = document.getElementById('register-city').value || document.getElementById('register-city-other').value;
             const description = document.getElementById('register-description').value;
+            const gender = document.getElementById('register-gender').value;
 
-            if (!email || !password || !username || !country) {
+            if (!email || !password || !username || !country || !gender) {
                 alert('Please fill all required fields');
                 return;
             }
@@ -1701,7 +1711,8 @@
                     lastSeen: firebase.database.ServerValue.TIMESTAMP,
                     status: 'online',
                     deviceId: deviceId,
-                    language: languageCodes[countryCode] || 'en'
+                    language: languageCodes[countryCode] || 'en',
+                    gender: gender
                 };
 
                 if (countryCode === 'id') {
