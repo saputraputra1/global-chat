@@ -1669,9 +1669,9 @@
                 }
 
                 // Check if device already has an account
-                const deviceSnapshot = await database.ref('devices/' + deviceId).once('value');
-                if (deviceSnapshot.exists()) {
-                    throw new Error('This device already has an account. Only one account per device is allowed.');
+                const deviceSnapshot = await database.ref('devices').orderByChild('deviceId').equalTo(deviceId).once('value');
+                if (deviceSnapshot.numChildren() >= 2) {
+                    throw new Error('You have reached the maximum number of accounts for this device (2).');
                 }
                 
                 // Create user with email and password
@@ -2741,9 +2741,10 @@
         }
 
         // Translate message using Deep Translate API
-        async function translateMessage(text, targetLang) {
-            if (!text || !targetLang || targetLang === 'en') return text;
-            
+        async function translateMessage(text, sourceLang, targetLang) {
+            if (!text || !targetLang) return text;
+            if (sourceLang === targetLang) return text;
+
             try {
                 const response = await fetch(translateApiUrl, {
                     method: 'POST',
@@ -2754,15 +2755,15 @@
                     },
                     body: JSON.stringify({
                         q: text,
-                        source: 'en',
+                        source: sourceLang,
                         target: targetLang
                     })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Translation API error');
                 }
-                
+
                 const data = await response.json();
                 return data.data.translations.translatedText || text;
             } catch (error) {
@@ -2774,25 +2775,29 @@
         // Toggle translation
         translateBtn.addEventListener('click', async () => {
             translateEnabled = !translateEnabled;
-            
+
             if (translateEnabled) {
                 translateBtn.innerHTML = '<i class="fas fa-language"></i> Translating...';
-                
+
                 // Translate all messages in current chat
                 if (currentChatWith) {
                     const messages = chatMessagesContainer.querySelectorAll('.message-content');
                     for (const messageElement of messages) {
-                        const originalText = messageElement.textContent;
-                        const translatedText = await translateMessage(originalText, targetLanguage);
+                        const originalText = messageElement.dataset.originalText || messageElement.textContent;
+                        messageElement.dataset.originalText = originalText;
+                        const translatedText = await translateMessage(originalText, 'auto', targetLanguage);
                         messageElement.textContent = translatedText;
                     }
                 }
-                
+
                 translateBtn.innerHTML = '<i class="fas fa-language"></i> Disable Translate';
             } else {
-                // Reload messages to show original text
-                if (currentChatWith) {
-                    loadMessages(currentChatWith);
+                // Restore original text
+                const messages = chatMessagesContainer.querySelectorAll('.message-content');
+                for (const messageElement of messages) {
+                    if (messageElement.dataset.originalText) {
+                        messageElement.textContent = messageElement.dataset.originalText;
+                    }
                 }
                 translateBtn.innerHTML = '<i class="fas fa-language"></i> Translate';
             }
@@ -2804,10 +2809,20 @@
                 alert('Please select a user to chat with');
                 return;
             }
-            
+
             const content = messageInput.value.trim();
             if (!content) return;
-            
+
+            // Auto-ban for inappropriate content
+            const bannedWords = ['rasis', 'bullying', 'pelecehan', 'ancaman', 'kontol', 'memek', 'anjing', 'asu', 'bangsat', 'bajingan', 'brengsek']; // Add more banned words as needed
+            for (const word of bannedWords) {
+                if (content.toLowerCase().includes(word)) {
+                    await permBanUser(currentUser.uid, 'Menggunakan bahasa yang tidak pantas.');
+                    alert('Anda telah diblokir secara permanen karena menggunakan bahasa yang tidak pantas.');
+                    return;
+                }
+            }
+
             // Get receiver's language preference for automatic translation
             let receiverLanguage = 'en';
             try {
@@ -2816,13 +2831,13 @@
             } catch (error) {
                 console.error('Error getting receiver language:', error);
             }
-            
+
             // If receiver's language is different from sender's, translate automatically
             let finalContent = content;
             if (receiverLanguage !== 'en') {
                 finalContent = await translateMessage(content, receiverLanguage);
             }
-            
+
             const message = {
                 senderId: currentUser.uid,
                 receiverId: currentChatWith,
@@ -2833,7 +2848,7 @@
                 originalLanguage: 'en', // Assuming sender always types in English
                 translatedLanguage: receiverLanguage !== 'en' ? receiverLanguage : null
             };
-            
+
             database.ref('messages').push(message)
                 .then(() => {
                     messageInput.value = '';
