@@ -65,13 +65,15 @@
         /* Login/Register Styles */
         .auth-form {
             background-color: rgba(255, 255, 255, 0.1);
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
-            width: 100%;
+            width: 90%;
             max-width: 400px;
             margin: auto;
             backdrop-filter: blur(10px);
             animation: fadeIn 0.5s ease;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         @keyframes fadeIn {
@@ -1153,21 +1155,9 @@
             <div class="chat-header">
                 <h2>Global Chat Room</h2>
                 <div class="header-buttons">
-                    <button id="translate-btn" class="translate-btn tooltip">
-                        <i class="fas fa-language"></i>
-                        <span class="tooltiptext">Toggle Translation</span>
-                    </button>
-                    <button id="messages-btn" class="messages-btn tooltip">
-                        <i class="fas fa-envelope"></i>
-                        <span class="tooltiptext">Messages</span>
-                    </button>
                     <button id="profile-btn" class="profile-btn tooltip">
                         <i class="fas fa-user"></i>
                         <span class="tooltiptext">Profile</span>
-                    </button>
-                    <button id="logout-btn" class="logout-btn tooltip">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span class="tooltiptext">Logout</span>
                     </button>
                 </div>
             </div>
@@ -1191,6 +1181,18 @@
                         <button id="filter-all" class="control-btn tooltip">
                             <i class="fas fa-users"></i> All
                             <span class="tooltiptext">Show All Users</span>
+                        </button>
+                        <button id="translate-btn" class="control-btn tooltip">
+                            <i class="fas fa-language"></i>
+                            <span class="tooltiptext">Toggle Translation</span>
+                        </button>
+                        <button id="messages-btn" class="control-btn tooltip">
+                            <i class="fas fa-envelope"></i>
+                            <span class="tooltiptext">Messages</span>
+                        </button>
+                        <button id="logout-btn" class="control-btn logout-btn tooltip">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span class="tooltiptext">Logout</span>
                         </button>
                     </div>
                 </div>
