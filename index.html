@@ -1463,7 +1463,7 @@
             'lt': '🇱🇹', 'lu': '🇱🇺', 'mo': '🇲🇴', 'mk': '🇲🇰', 'mg': '🇲🇬', 'mw': '🇲🇼', 'my': '🇲🇾', 'mv': '🇲🇻', 
             'ml': '🇲🇱', 'mt': '🇲🇹', 'mh': '🇲🇭', 'mr': '🇲🇷', 'mu': '🇲🇺', 'yt': '🇾🇹', 'mx': '🇲🇽', 'fm': '🇫🇲', 
             'md': '🇲🇩', 'mc': '🇲🇨', 'mn': '🇲🇳', 'me': '🇲🇪', 'ms': '🇲🇸', 'ma': '🇲🇦', 'mz': '🇲🇿', 'mm': '🇲🇲', 
-            'na': '🇳🇦', 'nr': '🇳🇷', 'np': '🇳🇵', 'nl': '🇳🇱', 'an': '🇳🇱', 'nc': '🇳🇨', 'nz': '🇳🇿', 'ni': '🇳🇮', 
+            'na': '🇳🇦', 'nr': '🇳🇷', 'np': '🇳🇵', 'nl': '🇳🇱', 'an': '🇦🇳', 'nc': '🇳🇨', 'nz': '🇳🇿', 'ni': '🇳🇮',
             'ne': '🇳🇪', 'ng': '🇳🇬', 'nu': '🇳🇺', 'kp': '🇰🇵', 'mp': '🇲🇵', 'no': '🇳🇴', 'om': '🇴🇲', 'pk': '🇵🇰', 
             'pw': '🇵🇼', 'ps': '🇵🇸', 'pa': '🇵🇦', 'pg': '🇵🇬', 'py': '🇵🇾', 'pe': '🇵🇪', 'ph': '🇵🇭', 'pn': '🇵🇳', 
             'pl': '🇵🇱', 'pt': '🇵🇹', 'pr': '🇵🇷', 'qa': '🇶🇦', 'cg': '🇨🇬', 're': '🇷🇪', 'ro': '🇷🇴', 'ru': '🇷🇺', 
@@ -2537,12 +2537,23 @@
                             ${message.senderId === currentUser.uid ? 'You' : username}
                         </div>
                         <span class="message-time">${formatTime(message.timestamp)}</span>
+                        <button class="action-btn translate-message-btn" data-message="${message.content}" data-target-lang="${targetLanguage}">T</button>
                     </div>
                     <div class="message-content">${message.content}</div>
                 `;
                 
                 chatMessagesContainer.appendChild(messageElement);
                 scrollToBottom();
+
+                // Add event listener to the translate button
+                const translateBtn = messageElement.querySelector('.translate-message-btn');
+                translateBtn.addEventListener('click', async (e) => {
+                    const button = e.target;
+                    const originalText = button.getAttribute('data-message');
+                    const targetLang = button.getAttribute('data-target-lang');
+                    const translatedText = await translateMessage(originalText, targetLang);
+                    messageElement.querySelector('.message-content').textContent = translatedText;
+                });
             });
         }
 
@@ -2796,25 +2807,35 @@
                 });
         }
 
-        // Translate message using our dictionary
+        // Translate message using DeepL API
         async function translateMessage(text, targetLang) {
             if (!text || !targetLang || targetLang === 'en') return text;
-            
-            // Check if we have translations for this language
-            if (!translations[targetLang]) return text;
-            
-            // Simple word-by-word translation (for demo purposes)
-            const translationDict = translations[targetLang];
-            let translatedText = text;
-            
-            // Replace common phrases (case insensitive)
-            for (const [english, translated] of Object.entries(translationDict)) {
-                const regex = new RegExp(english, 'gi');
-                translatedText = translatedText.replace(regex, translated);
+
+            const apiKey = '33c2cafafdmsh8fa0dd9b930f308p112f4';
+            const url = 'https://deep-translate1.p.rapidapi.com/language/translate/v2';
+
+            const options = {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'X-RapidAPI-Key': apiKey,
+                    'X-RapidAPI-Host': 'deep-translate1.p.rapidapi.com'
+                },
+                body: JSON.stringify({
+                    q: text,
+                    source: 'en',
+                    target: targetLang
+                })
+            };
+
+            try {
+                const response = await fetch(url, options);
+                const result = await response.json();
+                return `[Translated to ${targetLang}] ${result.data.translations.translatedText}`;
+            } catch (error) {
+                console.error('Error translating message:', error);
+                return text; // Return original text on error
             }
-            
-            // For a real app, you would use a translation API here
-            return translatedText !== text ? `[Translated to ${targetLang}] ${translatedText}` : text;
         }
 
         // Toggle translation
@@ -2897,6 +2918,21 @@
             }
         });
 
+        // Automatically select country based on IP
+        async function autoSelectCountry() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                const countryCode = data.country_code.toLowerCase();
+                const countrySelect = document.getElementById('register-country');
+                if (countryCode && countrySelect.querySelector(`option[value="${countryCode}"]`)) {
+                    countrySelect.value = countryCode;
+                }
+            } catch (error) {
+                console.error('Error auto-selecting country:', error);
+            }
+        }
+
         // Check auth state on page load
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -2965,6 +3001,7 @@
                 profileContainer.classList.remove('active');
                 messagesContainer.classList.remove('active');
                 authContainer.classList.add('active');
+                autoSelectCountry(); // Auto-select country on logout
             }
         });
     </script>
