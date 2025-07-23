@@ -1165,6 +1165,31 @@
             </div>
         </div>
 
+        <!-- Leaderboard Container -->
+        <div id="leaderboard-container" class="profile-container" style="display: none;">
+            <div class="profile-form">
+                <h2>Leaderboard</h2>
+                <div class="form-actions">
+                    <button id="sort-by-followers-btn" class="profile-btn">Sort by Followers</button>
+                    <button id="sort-by-reply-btn" class="profile-btn">Sort by Reply %</button>
+                </div>
+                <table class="messages-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>User</th>
+                            <th>Followers</th>
+                            <th>Reply %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-list"></tbody>
+                </table>
+                <div class="form-actions">
+                    <button id="back-to-chat-from-leaderboard-btn" class="logout-btn">Back to Chat</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Chat Container -->
         <div id="chat-container" class="chat-container">
             <div class="chat-header">
@@ -1211,6 +1236,10 @@
                         <button id="logout-btn" class="control-btn logout-btn tooltip">
                             <i class="fas fa-sign-out-alt"></i>
                             <span class="tooltiptext">Logout</span>
+                        </button>
+                        <button id="leaderboard-btn" class="control-btn tooltip">
+                            <i class="fas fa-trophy"></i>
+                            <span class="tooltiptext">Leaderboard</span>
                         </button>
                     </div>
                 </div>
@@ -1441,6 +1470,9 @@
         const refreshUsersBtn = document.getElementById('refresh-users');
         const filterOnlineBtn = document.getElementById('filter-online');
         const filterAllBtn = document.getElementById('filter-all');
+        const leaderboardBtn = document.getElementById('leaderboard-btn');
+        const leaderboardContainer = document.getElementById('leaderboard-container');
+        const backToChatFromLeaderboardBtn = document.getElementById('back-to-chat-from-leaderboard-btn');
 
         // Current user data
         let currentUser = null;
@@ -2903,6 +2935,49 @@
             }
         });
 
+        async function getLeaderboardData() {
+            const usersSnapshot = await database.ref('users').once('value');
+            const users = usersSnapshot.val();
+            const leaderboardData = [];
+
+            for (const userId in users) {
+                const user = users[userId];
+                const followersSnapshot = await database.ref('follows/' + userId).once('value');
+                const followersCount = followersSnapshot.numChildren();
+
+                const sentMessagesSnapshot = await database.ref('messages').orderByChild('senderId').equalTo(userId).once('value');
+                const sentMessagesCount = sentMessagesSnapshot.numChildren();
+
+                const receivedMessagesSnapshot = await database.ref('messages').orderByChild('receiverId').equalTo(userId).once('value');
+                const receivedMessages = receivedMessagesSnapshot.val() || {};
+
+                let repliedMessagesCount = 0;
+                for (const messageId in receivedMessages) {
+                    const message = receivedMessages[messageId];
+                    const conversationId = getConversationId(userId, message.senderId);
+                    const replySnapshot = await database.ref('messages').orderByChild('conversationId').equalTo(conversationId).once('value');
+                    const replies = replySnapshot.val() || {};
+
+                    for (const replyId in replies) {
+                        if (replies[replyId].senderId === userId) {
+                            repliedMessagesCount++;
+                            break;
+                        }
+                    }
+                }
+
+                const replyPercentage = sentMessagesCount > 0 ? (repliedMessagesCount / sentMessagesCount) * 100 : 0;
+
+                leaderboardData.push({
+                    username: user.username,
+                    followers: followersCount,
+                    replyPercentage: replyPercentage.toFixed(2)
+                });
+            }
+
+            return leaderboardData;
+        }
+
         // Populate country filter
         function populateCountryFilter() {
             for (const code in countryNames) {
@@ -2947,6 +3022,46 @@
 
         // IP Geolocation and VPN Detection
         const ipApiToken = 'c67223614a53f0';
+
+        leaderboardBtn.addEventListener('click', async () => {
+            chatContainer.classList.remove('active');
+            leaderboardContainer.style.display = 'flex';
+            const leaderboardData = await getLeaderboardData();
+            displayLeaderboard(leaderboardData, 'followers');
+        });
+
+        backToChatFromLeaderboardBtn.addEventListener('click', () => {
+            leaderboardContainer.style.display = 'none';
+            chatContainer.classList.add('active');
+        });
+
+        document.getElementById('sort-by-followers-btn').addEventListener('click', async () => {
+            const leaderboardData = await getLeaderboardData();
+            displayLeaderboard(leaderboardData, 'followers');
+        });
+
+        document.getElementById('sort-by-reply-btn').addEventListener('click', async () => {
+            const leaderboardData = await getLeaderboardData();
+            displayLeaderboard(leaderboardData, 'replyPercentage');
+        });
+
+        function displayLeaderboard(data, sortBy) {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+
+            data.sort((a, b) => b[sortBy] - a[sortBy]);
+
+            data.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${user.username}</td>
+                    <td>${user.followers}</td>
+                    <td>${user.replyPercentage}%</td>
+                `;
+                leaderboardList.appendChild(row);
+            });
+        }
 
         async function getIpInfo() {
             try {
