@@ -1166,6 +1166,9 @@
                 <div class="control-row">
                     <span class="control-title">Online Users</span>
                     <input type="text" id="user-search" class="user-search" placeholder="Search users...">
+                    <select id="country-filter" class="user-search">
+                        <option value="">All Countries</option>
+                    </select>
                 </div>
                 <div class="control-row">
                     <span class="control-title">Actions</span>
@@ -1419,6 +1422,7 @@
         const unbanBtn = document.getElementById('unban-btn');
         const adminControls = document.getElementById('admin-controls');
         const userSearch = document.getElementById('user-search');
+        const countryFilter = document.getElementById('country-filter');
         const refreshUsersBtn = document.getElementById('refresh-users');
         const filterOnlineBtn = document.getElementById('filter-online');
         const filterAllBtn = document.getElementById('filter-all');
@@ -2010,17 +2014,30 @@
         }
 
         // Load all users sorted by online status
-        function loadUsers() {
+        function loadUsers(searchTerm = '', selectedCountry = '') {
             database.ref('users').on('value', (snapshot) => {
                 usersList.innerHTML = '';
                 const users = snapshot.val();
-                const usersArray = [];
+                let usersArray = [];
                 
                 for (const userId in users) {
                     if (userId === currentUser.uid) continue; // Skip current user
                     usersArray.push({ id: userId, ...users[userId] });
                 }
                 
+                // Filter users based on search term and selected country
+                if (searchTerm) {
+                    usersArray = usersArray.filter(user =>
+                        user.username.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                if (selectedCountry) {
+                    usersArray = usersArray.filter(user =>
+                        user.country === selectedCountry
+                    );
+                }
+
                 // Sort users: online first, then by last seen (newest first)
                 usersArray.sort((a, b) => {
                     if (a.status === 'online' && b.status !== 'online') return -1;
@@ -2866,22 +2883,26 @@
             }
         });
 
-        // User search functionality
-        userSearch.addEventListener('input', () => {
+        // Populate country filter
+        function populateCountryFilter() {
+            for (const code in countryNames) {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = countryNames[code];
+                countryFilter.appendChild(option);
+            }
+        }
+
+        // User search and filter functionality
+        function filterUsers() {
             const searchTerm = userSearch.value.toLowerCase();
-            const userItems = usersList.querySelectorAll('.user-item');
+            const selectedCountry = countryFilter.value;
             
-            userItems.forEach(item => {
-                const username = item.querySelector('.user-name').textContent.toLowerCase();
-                const country = item.querySelector('.user-country').textContent.toLowerCase();
-                
-                if (username.includes(searchTerm) || country.includes(searchTerm)) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        });
+            loadUsers(searchTerm, selectedCountry);
+        }
+
+        userSearch.addEventListener('input', filterUsers);
+        countryFilter.addEventListener('change', filterUsers);
 
         // Refresh users list
         refreshUsersBtn.addEventListener('click', () => {
@@ -3006,6 +3027,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            populateCountryFilter();
             const ipInfo = await getIpInfo();
             if (ipInfo) {
                 if (ipInfo.privacy && (ipInfo.privacy.vpn || ipInfo.privacy.proxy || ipInfo.privacy.tor)) {
