@@ -200,6 +200,7 @@
             display: flex;
             overflow-x: auto;
             padding-bottom: 5px;
+            white-space: nowrap;
         }
 
         .user-item {
@@ -961,15 +962,16 @@
             }
             
             .users-list {
-                display: block;
-                overflow-x: hidden;
-                overflow-y: auto;
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: 5px;
             }
             
             .user-item {
-                margin-right: 0;
-                margin-bottom: 8px;
-                min-width: auto;
+                margin-right: 8px;
+                margin-bottom: 0;
+                min-width: 200px;
+                flex-shrink: 0;
             }
             
             .profile-view {
@@ -2830,13 +2832,20 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Translation API error');
+                    const errorData = await response.json();
+                    console.error('Translation API error:', errorData);
+                    throw new Error(`Translation API error: ${errorData.message}`);
                 }
 
                 const data = await response.json();
-                return data.data.translations.translatedText || text;
+                if (data.data && data.data.translations && data.data.translations.translatedText) {
+                    return data.data.translations.translatedText;
+                } else {
+                    return text;
+                }
             } catch (error) {
                 console.error('Translation error:', error);
+                alert(`Translation failed: ${error.message}`);
                 return text; // Return original text if translation fails
             }
         }
@@ -2847,13 +2856,16 @@
 
             if (translateEnabled) {
                 translateBtn.innerHTML = '<i class="fas fa-language"></i> Translating...';
+                translateBtn.classList.add('active');
 
                 // Translate all messages in current chat
                 if (currentChatWith) {
                     const messages = chatMessagesContainer.querySelectorAll('.message-content');
                     for (const messageElement of messages) {
                         const originalText = messageElement.dataset.originalText || messageElement.textContent;
-                        messageElement.dataset.originalText = originalText;
+                        if (!messageElement.dataset.originalText) {
+                            messageElement.dataset.originalText = originalText;
+                        }
                         const translatedText = await translateMessage(originalText, 'auto', targetLanguage);
                         messageElement.textContent = translatedText;
                     }
@@ -2861,6 +2873,7 @@
 
                 translateBtn.innerHTML = '<i class="fas fa-language"></i> Disable Translate';
             } else {
+                translateBtn.classList.remove('active');
                 // Restore original text
                 const messages = chatMessagesContainer.querySelectorAll('.message-content');
                 for (const messageElement of messages) {
@@ -2882,15 +2895,6 @@
             const content = messageInput.value.trim();
             if (!content) return;
 
-            // Auto-ban for inappropriate content
-            const bannedWords = ['rasis', 'bullying', 'pelecehan', 'ancaman', 'kontol', 'memek', 'anjing', 'asu', 'bangsat', 'bajingan', 'brengsek']; // Add more banned words as needed
-            for (const word of bannedWords) {
-                if (content.toLowerCase().includes(word)) {
-                    await permBanUser(currentUser.uid, 'Menggunakan bahasa yang tidak pantas.');
-                    alert('Anda telah diblokir secara permanen karena menggunakan bahasa yang tidak pantas.');
-                    return;
-                }
-            }
 
             // Get receiver's language preference for automatic translation
             let receiverLanguage = 'en';
@@ -3191,48 +3195,59 @@
             const video = document.getElementById('face-verification-video');
             const canvas = document.getElementById('face-verification-canvas');
             const registerBtn = document.getElementById('register-btn');
+            const registerGender = document.getElementById('register-gender');
             let faceVerified = false;
+
+            registerBtn.disabled = true;
 
             faceVerificationBtn.addEventListener('click', async () => {
                 video.style.display = 'block';
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
 
-                setTimeout(async () => {
-                    canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
-                    const imageDataUrl = canvas.toDataURL('image/jpeg');
-                    stream.getTracks().forEach(track => track.stop());
-                    video.style.display = 'none';
+                    setTimeout(async () => {
+                        canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
+                        const imageDataUrl = canvas.toDataURL('image/jpeg');
+                        stream.getTracks().forEach(track => track.stop());
+                        video.style.display = 'none';
 
-                    try {
-                        const response = await fetch(facePlusPlusApiUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: `api_key=${facePlusPlusApiKey}&api_secret=${facePlusPlusApiSecret}&image_base64=${encodeURIComponent(imageDataUrl.split(',')[1])}&return_attributes=gender`
-                        });
+                        try {
+                            const formData = new FormData();
+                            formData.append('api_key', facePlusPlusApiKey);
+                            formData.append('api_secret', facePlusPlusApiSecret);
+                            formData.append('image_base64', imageDataUrl.split(',')[1]);
+                            formData.append('return_attributes', 'gender');
 
-                        const data = await response.json();
-                        if (data.faces.length > 0) {
-                            const detectedGender = data.faces[0].attributes.gender.value.toLowerCase();
-                            const selectedGender = document.getElementById('register-gender').value;
+                            const response = await fetch(facePlusPlusApiUrl, {
+                                method: 'POST',
+                                body: formData
+                            });
 
-                            if (detectedGender === selectedGender) {
+                            const data = await response.json();
+                            if (data.faces && data.faces.length > 0) {
+                                const detectedGender = data.faces[0].attributes.gender.value.toLowerCase();
+                                if(detectedGender === 'male' || detectedGender === 'female') {
+                                    registerGender.value = detectedGender;
+                                } else {
+                                    registerGender.value = 'other';
+                                }
                                 faceVerified = true;
-                                alert('Face verification successful!');
+                                alert('Face verification successful! Gender has been set automatically.');
                                 registerBtn.disabled = false;
                             } else {
-                                alert('Face verification failed: Gender does not match.');
+                                alert('Face verification failed: No face detected.');
                             }
-                        } else {
-                            alert('Face verification failed: No face detected.');
+                        } catch (error) {
+                            console.error('Face verification error:', error);
+                            alert('An error occurred during face verification.');
                         }
-                    } catch (error) {
-                        console.error('Face verification error:', error);
-                        alert('An error occurred during face verification.');
-                    }
-                }, 3000);
+                    }, 3000);
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    alert('Could not access the camera. Please grant permission and try again.');
+                    video.style.display = 'none';
+                }
             });
 
             registerBtn.addEventListener('click', (e) => {
