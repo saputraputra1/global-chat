@@ -1162,7 +1162,7 @@
                 </div>
                 <div class="form-group">
                     <label for="face-verification-btn" class="avatar-upload-btn">Face Verification</label>
-                    <button id="face-verification-btn" style="display: none;"></button>
+                    <button id="face-verification-btn">Verify Face</button>
                     <video id="face-verification-video" width="320" height="240" autoplay style="display: none;"></video>
                     <canvas id="face-verification-canvas" width="320" height="240" style="display: none;"></canvas>
                 </div>
@@ -3222,7 +3222,8 @@
                         });
 
                         const data = await response.json();
-                        if (data.faces.length > 0) {
+                        console.log('Face++ API response:', data);
+                        if (data.faces && data.faces.length > 0) {
                             const detectedGender = data.faces[0].attributes.gender.value.toLowerCase();
                             const selectedGender = document.getElementById('register-gender').value;
 
@@ -3231,7 +3232,7 @@
                                 alert('Face verification successful!');
                                 registerBtn.disabled = false;
                             } else {
-                                alert('Face verification failed: Gender does not match.');
+                                alert(`Face verification failed: Gender does not match. Detected: ${detectedGender}, Selected: ${selectedGender}`);
                             }
                         } else {
                             alert('Face verification failed: No face detected.');
