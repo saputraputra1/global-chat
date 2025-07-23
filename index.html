@@ -2215,12 +2215,11 @@
                         }
                     });
                 
-                // Update follower count
-                database.ref('follows/' + userId).once('value')
-                    .then((followersSnapshot) => {
-                        const count = followersSnapshot.numChildren();
-                        followersCount.textContent = count;
-                    });
+        // Update follower count in real-time
+        database.ref('follows/' + userId).on('value', (followersSnapshot) => {
+            const count = followersSnapshot.numChildren();
+            followersCount.textContent = count;
+        });
                 
                 // Check if current user is following this user
                 database.ref('follows/' + currentUser.uid + '/' + userId).once('value')
@@ -2276,13 +2275,12 @@
             });
         }
 
-        // Update current user's following count
+        // Update current user's following count in real-time
         function updateFollowingCount() {
-            database.ref('follows/' + currentUser.uid).once('value')
-                .then((snapshot) => {
-                    const count = snapshot.numChildren();
-                    followingCount.textContent = count;
-                });
+            database.ref('follows/' + currentUser.uid).on('value', (snapshot) => {
+                const count = snapshot.numChildren();
+                followingCount.textContent = count;
+            });
         }
 
         // Follow a user
