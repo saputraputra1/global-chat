@@ -18,25 +18,9 @@
         }
 
         body {
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-            height: 100vh;
-            overflow: hidden;
-            color: white;
+            background-color: #f0f2f5;
+            color: #333;
             touch-action: manipulation;
-        }
-
-        @keyframes gradient {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
         }
 
         .container {
@@ -45,8 +29,8 @@
             max-width: 100%;
             margin: 0 auto;
             height: 100vh;
-            background-color: rgba(0, 0, 0, 0.7);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
@@ -64,13 +48,13 @@
 
         /* Login/Register Styles */
         .auth-form {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 20px;
+            background-color: #fff;
+            padding: 40px;
             border-radius: 10px;
             width: 100%;
             max-width: 400px;
             margin: auto;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             animation: fadeIn 0.5s ease;
         }
 
@@ -81,29 +65,29 @@
 
         .auth-form h2 {
             text-align: center;
-            margin-bottom: 15px;
-            color: #fff;
-            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 1.8rem;
         }
 
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 5px;
-            color: #ddd;
+            color: #555;
             font-size: 0.9rem;
         }
 
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            padding: 10px;
-            border: none;
+            padding: 12px;
+            border: 1px solid #ddd;
             border-radius: 5px;
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
+            background-color: #f9f9f9;
+            color: #333;
             font-size: 1rem;
         }
 
@@ -118,7 +102,7 @@
         }
 
         button {
-            background-color: #4CAF50;
+            background-color: #007bff;
             color: white;
             border: none;
             padding: 12px 15px;
@@ -131,21 +115,22 @@
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: #0056b3;
             transform: translateY(-2px);
         }
 
         .toggle-auth {
             text-align: center;
-            margin-top: 15px;
-            color: #ddd;
+            margin-top: 20px;
+            color: #555;
             font-size: 0.9rem;
         }
 
         .toggle-auth a {
-            color: #4CAF50;
+            color: #007bff;
             cursor: pointer;
             text-decoration: none;
+            font-weight: bold;
         }
 
         /* Chat Styles */
@@ -153,9 +138,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
             position: sticky;
             top: 0;
             z-index: 10;
@@ -178,10 +163,10 @@
 
         .users-sidebar {
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-            padding: 10px;
+            background-color: #f8f9fa;
+            padding: 15px;
             overflow-y: auto;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid #ddd;
             max-height: 200px;
         }
 
@@ -189,8 +174,9 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 10px;
+            padding: 20px;
             overflow: hidden;
+            background-color: #e9ebee;
         }
 
         .users-list {
@@ -201,50 +187,54 @@
         }
 
         .user-item {
-            padding: 8px;
+            padding: 10px;
             margin-right: 8px;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
             display: flex;
             align-items: center;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: #fff;
             position: relative;
             min-width: 200px;
             flex-shrink: 0;
+            border: 1px solid #ddd;
         }
 
         .user-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: #f0f2f5;
+            border-color: #007bff;
         }
 
         .user-item.active {
-            background-color: rgba(76, 175, 80, 0.3);
+            background-color: #e7f3ff;
+            border-color: #007bff;
         }
 
         .user-status {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 10px;
+            border: 2px solid #fff;
         }
 
         .online {
-            background-color: #4CAF50;
-            box-shadow: 0 0 5px #4CAF50;
+            background-color: #28a745;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.7);
         }
 
         .offline {
-            background-color: #f44336;
+            background-color: #6c757d;
         }
 
         .user-avatar {
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 12px;
             object-fit: cover;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: #e9ebee;
         }
 
         .user-info {
@@ -256,12 +246,14 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 0.9rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
         }
 
         .user-country {
-            font-size: 0.7rem;
-            color: #aaa;
+            font-size: 0.8rem;
+            color: #666;
             display: flex;
             align-items: center;
         }
@@ -287,25 +279,33 @@
         .chat-messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 8px;
+            padding: 15px;
             margin-bottom: 10px;
-            background-color: rgba(0, 0, 0, 0.3);
-            border-radius: 5px;
+            background-color: #fff;
+            border-radius: 8px;
             scroll-behavior: smooth;
         }
 
         .message {
-            margin-bottom: 12px;
-            padding: 8px;
-            border-radius: 5px;
-            background-color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 18px;
+            background-color: #f0f2f5;
             animation: messageIn 0.3s ease;
             word-break: break-word;
+            max-width: 70%;
+            align-self: flex-start;
+        }
+
+        .message.sent {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
         }
 
         .unread {
-            background-color: rgba(76, 175, 80, 0.2);
-            border-left: 3px solid #4CAF50;
+            background-color: #e7f3ff;
+            border-left: 3px solid #007bff;
         }
 
         @keyframes messageIn {
@@ -316,28 +316,28 @@
         .message-header {
             display: flex;
             align-items: center;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
         }
 
         .message-avatar {
-            width: 25px;
-            height: 25px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 10px;
             object-fit: cover;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: #e9ebee;
         }
 
         .message-sender {
             font-weight: bold;
-            color: #4CAF50;
+            color: #007bff;
             font-size: 0.9rem;
         }
 
         .message-time {
-            font-size: 0.7rem;
-            color: #aaa;
-            margin-left: 8px;
+            font-size: 0.75rem;
+            color: #666;
+            margin-left: 10px;
         }
 
         .message-content {
@@ -347,67 +347,69 @@
 
         .message-input-container {
             display: flex;
-            gap: 8px;
-            padding-top: 8px;
+            gap: 10px;
+            padding: 15px;
             position: sticky;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding-bottom: 8px;
+            background-color: #f0f2f5;
+            border-top: 1px solid #ddd;
         }
 
         .message-input {
             flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
+            padding: 12px 18px;
+            border: 1px solid #ccc;
+            border-radius: 24px;
+            background-color: #fff;
+            color: #333;
             font-size: 1rem;
         }
 
         .message-input:focus {
             outline: none;
-            background-color: rgba(255, 255, 255, 0.3);
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
 
         .send-button {
             width: 80px;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 24px;
         }
 
         .logout-btn {
-            background-color: #f44336;
+            background-color: #dc3545;
             width: auto;
-            padding: 6px 10px;
+            padding: 8px 12px;
             font-size: 0.9rem;
         }
 
         .logout-btn:hover {
-            background-color: #d32f2f;
+            background-color: #c82333;
         }
 
         .profile-btn {
-            background-color: #2196F3;
+            background-color: #007bff;
             width: auto;
-            padding: 6px 10px;
+            padding: 8px 12px;
             margin-right: 8px;
             font-size: 0.9rem;
         }
 
         .profile-btn:hover {
-            background-color: #0b7dda;
+            background-color: #0056b3;
         }
 
         .messages-btn {
-            background-color: #9C27B0;
+            background-color: #17a2b8;
             width: auto;
-            padding: 6px 10px;
+            padding: 8px 12px;
             margin-right: 8px;
             font-size: 0.9rem;
         }
 
         .messages-btn:hover {
-            background-color: #7B1FA2;
+            background-color: #117a8b;
         }
 
         .user-actions {
@@ -910,19 +912,9 @@
     </style>
 </head>
 <body>
-    <!-- Background bubbles animation -->
-    <div class="bubbles">
-        <div class="bubble"></div>
-        <div class="bubble"></div>
-        <div class="bubble"></div>
-        <div class="bubble"></div>
-        <div class="bubble"></div>
-        <div class="bubble"></div>
-        <div class="bubble"></div>
-        <div class="bubble"></div>
-    </div>
-
     <div class="container">
+        <video id="local-video" autoplay playsinline muted></video>
+        <video id="remote-video" autoplay playsinline></video>
         <!-- Authentication Container -->
         <div id="auth-container" class="auth-container active">
             <div id="login-form" class="auth-form">
@@ -957,7 +949,7 @@
                 </div>
                 <div class="form-group">
                     <label for="register-country">Country</label>
-                    <select id="register-country">
+                    <select id="register-country" disabled>
                         <option value="">Select your country</option>
                         <option value="af">Afghanistan</option>
                         <option value="al">Albania</option>
@@ -1255,6 +1247,8 @@
                         </div>
                         <div class="profile-description" id="view-profile-description"></div>
                         <div class="profile-actions">
+                            <button id="voice-call-btn" class="action-btn">📞</button>
+                            <button id="video-call-btn" class="action-btn">📹</button>
                             <button id="follow-btn" class="follow-btn" style="display: none;">Follow</button>
                             <button id="unfollow-btn" class="unfollow-btn" style="display: none;">Unfollow</button>
                         </div>
@@ -1301,6 +1295,47 @@
                     <button id="save-profile-btn" class="profile-btn">Save Profile</button>
                     <button id="cancel-profile-btn" class="logout-btn">Cancel</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Container -->
+        <div id="leaderboard-container" class="leaderboard-container" style="display: none;">
+            <div class="chat-header">
+                <h2>Leaderboard</h2>
+                <button id="back-to-chat-from-leaderboard-btn" class="profile-btn">Back to Chat</button>
+            </div>
+            <div id="leaderboard-content"></div>
+        </div>
+
+        <!-- Public Profile Container -->
+        <div id="public-profile-container" class="public-profile-container" style="display: none;">
+            <div class="chat-header">
+                <h2 id="public-profile-name"></h2>
+                <button id="back-to-chat-from-public-profile-btn" class="profile-btn">Back to Chat</button>
+            </div>
+            <div id="public-profile-content">
+                <div id="public-profile-followers"></div>
+                <div id="public-profile-following"></div>
+            </div>
+        </div>
+
+        <!-- Global Room Container -->
+        <div id="global-room-container" class="global-room-container" style="display: none;">
+            <div class="chat-header">
+                <h2>Global Room</h2>
+                <button id="leave-global-room-btn" class="profile-btn">Leave Room</button>
+            </div>
+            <div id="global-room-content">
+                <div id="global-room-messages"></div>
+                <div id="global-room-input-container">
+                    <input type="text" id="global-room-input" placeholder="Type a message...">
+                    <button id="global-room-send-btn">Send</button>
+                </div>
+                <div id="typing-indicator"></div>
+            </div>
+            <div id="online-users-container">
+                <h3>Online Users</h3>
+                <ul id="online-users-list"></ul>
             </div>
         </div>
 
@@ -1425,6 +1460,159 @@
         const permBanBtn = document.getElementById('perm-ban-btn');
         const unbanBtn = document.getElementById('unban-btn');
         const adminControls = document.getElementById('admin-controls');
+        const leaderboardContainer = document.getElementById('leaderboard-container');
+        const leaderboardBtn = document.createElement('button');
+        leaderboardBtn.id = 'leaderboard-btn';
+        leaderboardBtn.className = 'messages-btn';
+        leaderboardBtn.textContent = 'Leaderboard';
+        document.querySelector('.chat-header > div').insertBefore(leaderboardBtn, messagesBtn);
+        const backToChatFromLeaderboardBtn = document.getElementById('back-to-chat-from-leaderboard-btn');
+        const publicProfileContainer = document.getElementById('public-profile-container');
+        const backToChatFromPublicProfileBtn = document.getElementById('back-to-chat-from-public-profile-btn');
+        const globalRoomContainer = document.getElementById('global-room-container');
+        const joinGlobalRoomBtn = document.createElement('button');
+        joinGlobalRoomBtn.id = 'join-global-room-btn';
+        joinGlobalRoomBtn.className = 'messages-btn';
+        joinGlobalRoomBtn.textContent = 'Global Room';
+        document.querySelector('.chat-header > div').insertBefore(joinGlobalRoomBtn, leaderboardBtn);
+        const leaveGlobalRoomBtn = document.getElementById('leave-global-room-btn');
+        const globalRoomInput = document.getElementById('global-room-input');
+        const globalRoomSendBtn = document.getElementById('global-room-send-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const onlineUsersList = document.getElementById('online-users-list');
+
+        joinGlobalRoomBtn.addEventListener('click', () => {
+            chatContainer.classList.remove('active');
+            globalRoomContainer.style.display = 'flex';
+            joinGlobalRoom();
+        });
+
+        leaveGlobalRoomBtn.addEventListener('click', () => {
+            globalRoomContainer.style.display = 'none';
+            chatContainer.classList.add('active');
+            leaveGlobalRoom();
+        });
+
+        globalRoomSendBtn.addEventListener('click', () => {
+            const content = globalRoomInput.value.trim();
+            if (content) {
+                sendGlobalMessage(content);
+                globalRoomInput.value = '';
+            }
+        });
+
+        globalRoomInput.addEventListener('input', () => {
+            const typingRef = database.ref('typing/' + currentUser.uid);
+            typingRef.set(true);
+            setTimeout(() => typingRef.remove(), 3000);
+        });
+
+        function joinGlobalRoom() {
+            const onlineUsersRef = database.ref('onlineUsers');
+            onlineUsersRef.on('value', snapshot => {
+                onlineUsersList.innerHTML = '';
+                snapshot.forEach(childSnapshot => {
+                    const user = childSnapshot.val();
+                    const item = document.createElement('li');
+                    item.textContent = user.username;
+                    onlineUsersList.appendChild(item);
+                });
+            });
+
+            const typingRef = database.ref('typing');
+            typingRef.on('value', snapshot => {
+                const typingUsers = [];
+                snapshot.forEach(childSnapshot => {
+                    typingUsers.push(childSnapshot.key);
+                });
+                if (typingUsers.length > 0) {
+                    typingIndicator.textContent = `${typingUsers.join(', ')} is typing...`;
+                } else {
+                    typingIndicator.textContent = '';
+                }
+            });
+
+            const globalMessagesRef = database.ref('globalMessages');
+            globalMessagesRef.on('child_added', snapshot => {
+                const message = snapshot.val();
+                const messageElement = document.createElement('div');
+                messageElement.textContent = `${message.sender}: ${message.content}`;
+                document.getElementById('global-room-messages').appendChild(messageElement);
+            });
+        }
+
+        function leaveGlobalRoom() {
+            database.ref('onlineUsers/' + currentUser.uid).remove();
+            database.ref('typing/' + currentUser.uid).remove();
+            database.ref('onlineUsers').off();
+            database.ref('typing').off();
+            database.ref('globalMessages').off();
+        }
+
+        function sendGlobalMessage(content) {
+            const message = {
+                sender: currentUser.displayName,
+                content: content,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+            };
+            database.ref('globalMessages').push(message);
+        }
+
+        document.getElementById('view-profile-name').addEventListener('click', () => {
+            showPublicProfile(currentChatWith);
+        });
+
+        backToChatFromPublicProfileBtn.addEventListener('click', () => {
+            publicProfileContainer.style.display = 'none';
+            chatContainer.classList.add('active');
+        });
+
+        async function showPublicProfile(userId) {
+            chatContainer.classList.remove('active');
+            publicProfileContainer.style.display = 'flex';
+
+            const userSnapshot = await database.ref('users/' + userId).once('value');
+            const user = userSnapshot.val();
+            document.getElementById('public-profile-name').textContent = `${user.username}'s Profile`;
+
+            const followersRef = database.ref('follows/' + userId);
+            followersRef.on('value', snapshot => {
+                const followers = [];
+                snapshot.forEach(childSnapshot => {
+                    followers.push(childSnapshot.key);
+                });
+                const followersList = document.getElementById('public-profile-followers');
+                followersList.innerHTML = '<h3>Followers</h3>';
+                const list = document.createElement('ul');
+                followers.forEach(followerId => {
+                    database.ref('users/' + followerId).once('value').then(userSnapshot => {
+                        const item = document.createElement('li');
+                        item.textContent = userSnapshot.val().username;
+                        list.appendChild(item);
+                    });
+                });
+                followersList.appendChild(list);
+            });
+
+            const followingRef = database.ref('users/' + userId + '/following');
+            followingRef.on('value', snapshot => {
+                const following = [];
+                snapshot.forEach(childSnapshot => {
+                    following.push(childSnapshot.key);
+                });
+                const followingList = document.getElementById('public-profile-following');
+                followingList.innerHTML = '<h3>Following</h3>';
+                const list = document.createElement('ul');
+                following.forEach(followingId => {
+                    database.ref('users/' + followingId).once('value').then(userSnapshot => {
+                        const item = document.createElement('li');
+                        item.textContent = userSnapshot.val().username;
+                        list.appendChild(item);
+                    });
+                });
+                followingList.appendChild(list);
+            });
+        }
 
         // Current user data
         let currentUser = null;
@@ -2308,6 +2496,7 @@
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             })
             .then(() => {
+                database.ref('users/' + userId + '/followers').transaction(count => (count || 0) + 1);
                 // Add real-time listener for follow status
                 if (!followListeners[userId]) {
                     followListeners[userId] = database.ref('follows/' + currentUser.uid + '/' + userId).on('value', (snapshot) => {
@@ -2337,6 +2526,7 @@
         function unfollowUser(userId) {
             database.ref('follows/' + currentUser.uid + '/' + userId).remove()
                 .then(() => {
+                    database.ref('users/' + userId + '/followers').transaction(count => (count || 0) - 1);
                     loadUsers(); // Refresh user list
                     removeUserFromFollowingTable(userId); // Remove from following list
                     updateFollowingCount(); // Update following count
@@ -2865,6 +3055,27 @@
             }
         });
 
+        // Banned words list
+        const bannedWords = ['rasis', 'bodoh', 'gila'];
+
+        // Check for banned words and ban user if necessary
+        async function checkAndBanUser(userId, text) {
+            const containsBannedWord = bannedWords.some(word => text.toLowerCase().includes(word));
+            if (containsBannedWord) {
+                const reason = 'Menggunakan bahasa yang tidak pantas.';
+                await database.ref('bans/' + userId).set({
+                    permanent: true,
+                    reason: reason,
+                    bannedBy: 'system',
+                    bannedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+                alert('Akun Anda telah diblokir secara permanen karena menggunakan bahasa yang tidak pantas.');
+                logoutBtn.click();
+                return true;
+            }
+            return false;
+        }
+
         // Send message
         async function sendMessage() {
             if (!currentChatWith) {
@@ -2874,6 +3085,10 @@
             
             const content = messageInput.value.trim();
             if (!content) return;
+
+            // Check for banned words
+            const isBanned = await checkAndBanUser(currentUser.uid, content);
+            if (isBanned) return;
             
             // Get receiver's language preference for automatic translation
             let receiverLanguage = 'en';
@@ -2931,6 +3146,105 @@
             } catch (error) {
                 console.error('Error auto-selecting country:', error);
             }
+        }
+
+        let localStream;
+        let remoteStream;
+        let peerConnection;
+        const configuration = {
+            iceServers: [
+                {
+                    urls: [
+                        'stun:stun1.l.google.com:19302',
+                        'stun:stun2.l.google.com:19302',
+                    ],
+                },
+            ],
+            iceCandidatePoolSize: 10,
+        };
+
+        async function startCall(type) {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
+            document.getElementById('local-video').srcObject = localStream;
+
+            peerConnection = new RTCPeerConnection(configuration);
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            peerConnection.ontrack = event => {
+                remoteStream = event.streams[0];
+                document.getElementById('remote-video').srcObject = remoteStream;
+            };
+
+            const callDoc = database.ref('calls').doc();
+            const offerCandidates = callDoc.collection('offerCandidates');
+            const answerCandidates = callDoc.collection('answerCandidates');
+
+            peerConnection.onicecandidate = event => {
+                event.candidate && offerCandidates.add(event.candidate.toJSON());
+            };
+
+            const offerDescription = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offerDescription);
+
+            const offer = {
+                sdp: offerDescription.sdp,
+                type: offerDescription.type,
+            };
+
+            await callDoc.set({ offer });
+
+            callDoc.onSnapshot(snapshot => {
+                const data = snapshot.data();
+                if (!peerConnection.currentRemoteDescription && data?.answer) {
+                    const answerDescription = new RTCSessionDescription(data.answer);
+                    peerConnection.setRemoteDescription(answerDescription);
+                }
+            });
+
+            answerCandidates.onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        const candidate = new RTCIceCandidate(change.doc.data());
+                        peerConnection.addIceCandidate(candidate);
+                    }
+                });
+            });
+        }
+
+        document.getElementById('voice-call-btn').addEventListener('click', () => startCall('voice'));
+        document.getElementById('video-call-btn').addEventListener('click', () => startCall('video'));
+
+        leaderboardBtn.addEventListener('click', () => {
+            chatContainer.classList.remove('active');
+            leaderboardContainer.style.display = 'flex';
+            loadLeaderboard();
+        });
+
+        backToChatFromLeaderboardBtn.addEventListener('click', () => {
+            leaderboardContainer.style.display = 'none';
+            chatContainer.classList.add('active');
+        });
+
+        async function loadLeaderboard() {
+            const usersRef = database.ref('users');
+            usersRef.orderByChild('followers').limitToLast(10).on('value', snapshot => {
+                const users = [];
+                snapshot.forEach(childSnapshot => {
+                    users.unshift(childSnapshot.val());
+                });
+                const leaderboardContent = document.getElementById('leaderboard-content');
+                leaderboardContent.innerHTML = '<h3>Top 10 Most Followers</h3>';
+                const list = document.createElement('ol');
+                users.forEach(user => {
+                    const item = document.createElement('li');
+                    item.textContent = `${user.username} - ${user.followers || 0} followers`;
+                    list.appendChild(item);
+                });
+                leaderboardContent.appendChild(list);
+            });
         }
 
         // Check auth state on page load
