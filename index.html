@@ -21,8 +21,9 @@
         }
 
         body {
-            background: url('https://i.pinimg.com/originals/85/6f/31/856f31d9f475501c7552c97dbe727319.gif') no-repeat center center fixed;
-            background-size: cover;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
             height: 100vh;
             overflow: hidden;
             color: white;
@@ -66,14 +67,16 @@
 
         /* Login/Register Styles */
         .auth-form {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            border-radius: 20px;
             width: 100%;
             max-width: 400px;
             margin: auto;
             backdrop-filter: blur(10px);
-            animation: fadeIn 0.5s ease;
+            animation: fadeIn 1s ease-out;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         @keyframes fadeIn {
@@ -101,12 +104,13 @@
 
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: rgba(255, 255, 255, 0.2);
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
             color: white;
             font-size: 1rem;
+            transition: all 0.3s;
         }
 
         .form-group textarea {
@@ -120,21 +124,23 @@
         }
 
         button {
-            background-color: #4CAF50;
+            background: linear-gradient(to right, #4CAF50, #2196F3);
             color: white;
             border: none;
-            padding: 12px 15px;
-            border-radius: 5px;
+            padding: 15px;
+            border-radius: 8px;
             cursor: pointer;
             width: 100%;
             font-weight: bold;
-            transition: all 0.3s;
-            font-size: 1rem;
+            transition: all 0.4s;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
         }
 
         button:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
+            background: linear-gradient(to right, #45a049, #0b7dda);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         .toggle-auth {
@@ -145,9 +151,10 @@
         }
 
         .toggle-auth a {
-            color: #4CAF50;
+            color: #2196F3;
             cursor: pointer;
             text-decoration: none;
+            font-weight: bold;
         }
 
         /* Chat Styles */
