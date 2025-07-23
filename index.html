@@ -1152,6 +1152,12 @@
                     <label for="register-avatar-upload" class="avatar-upload-btn">Choose Profile Picture</label>
                     <input type="file" id="register-avatar-upload" accept="image/*">
                 </div>
+                <div class="form-group">
+                    <label for="face-verification-btn" class="avatar-upload-btn">Face Verification</label>
+                    <button id="face-verification-btn" style="display: none;"></button>
+                    <video id="face-verification-video" width="320" height="240" autoplay style="display: none;"></video>
+                    <canvas id="face-verification-canvas" width="320" height="240" style="display: none;"></canvas>
+                </div>
                 <button id="register-btn">Register</button>
                 <div class="toggle-auth">
                     Already have an account? <a id="show-login">Login</a>
@@ -1458,6 +1464,11 @@
         const translateApiUrl = 'https://deep-translate1.p.rapidapi.com/language/translate/v2';
         const translateApiKey = '33c2cafafdmsh8fa0dd9b930f308p112f4';
         const translateApiHost = 'deep-translate1.p.rapidapi.com';
+
+        // Face++ API configuration
+        const facePlusPlusApiKey = 'YOUR_FACEPLUSPLUS_API_KEY';
+        const facePlusPlusApiSecret = 'YOUR_FACEPLUSPLUS_API_SECRET';
+        const facePlusPlusApiUrl = 'https://api-us.faceplusplus.com/facepp/v3/detect';
 
         // Country flag mapping (using emoji flags)
         const countryFlags = {
@@ -3062,6 +3073,61 @@
                     document.getElementById('register-city-other').value = ipInfo.city;
                 }
             }
+
+            const faceVerificationBtn = document.getElementById('face-verification-btn');
+            const video = document.getElementById('face-verification-video');
+            const canvas = document.getElementById('face-verification-canvas');
+            const registerBtn = document.getElementById('register-btn');
+            let faceVerified = false;
+
+            faceVerificationBtn.addEventListener('click', async () => {
+                video.style.display = 'block';
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+
+                setTimeout(async () => {
+                    canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
+                    const imageDataUrl = canvas.toDataURL('image/jpeg');
+                    stream.getTracks().forEach(track => track.stop());
+                    video.style.display = 'none';
+
+                    try {
+                        const response = await fetch(facePlusPlusApiUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: `api_key=${facePlusPlusApiKey}&api_secret=${facePlusPlusApiSecret}&image_base64=${encodeURIComponent(imageDataUrl.split(',')[1])}&return_attributes=gender`
+                        });
+
+                        const data = await response.json();
+                        if (data.faces.length > 0) {
+                            const detectedGender = data.faces[0].attributes.gender.value.toLowerCase();
+                            const selectedGender = document.getElementById('register-gender').value;
+
+                            if (detectedGender === selectedGender) {
+                                faceVerified = true;
+                                alert('Face verification successful!');
+                                registerBtn.disabled = false;
+                            } else {
+                                alert('Face verification failed: Gender does not match.');
+                            }
+                        } else {
+                            alert('Face verification failed: No face detected.');
+                        }
+                    } catch (error) {
+                        console.error('Face verification error:', error);
+                        alert('An error occurred during face verification.');
+                    }
+                }, 3000);
+            });
+
+            registerBtn.addEventListener('click', (e) => {
+                if (!faceVerified) {
+                    e.preventDefault();
+                    alert('Please complete face verification first.');
+                }
+            });
         });
     </script>
 </body>
