@@ -898,6 +898,9 @@
         .control-buttons {
             display: flex;
             gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 5px;
         }
 
         .control-btn {
@@ -989,6 +992,11 @@
 
             .control-row:last-child {
                 margin-right: 0;
+            }
+
+            .control-buttons {
+                overflow-x: visible;
+                white-space: normal;
             }
         }
 
